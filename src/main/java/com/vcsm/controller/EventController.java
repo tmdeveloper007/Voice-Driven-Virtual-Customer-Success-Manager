@@ -17,9 +17,11 @@ public class EventController {
     private EventService eventService;
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Event> create(@Valid @RequestBody Event event) {
         return ResponseEntity.ok(eventService.createEvent(event));
     }
+
 
     @GetMapping
     public ResponseEntity<List<Event>> getAll() {
@@ -49,12 +51,15 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Event> update(@PathVariable Long id, @RequestBody Event event) {
         return ResponseEntity.ok(eventService.updateEvent(id, event));
     }
 
+
     @PostMapping("/{id}/register")
     public ResponseEntity<?> register(@PathVariable Long id) {
+
         try {
             return ResponseEntity.ok(eventService.registerForEvent(id));
         } catch (RuntimeException e) {
@@ -68,8 +73,10 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
     }
+
 }

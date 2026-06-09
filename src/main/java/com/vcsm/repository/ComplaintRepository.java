@@ -14,6 +14,11 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     List<Complaint> findByResidentName(String residentName);
 
+    List<Complaint> findByResidentUsernameOrderByCreatedAtDesc(String residentUsername);
+
+    Optional<Complaint> findByIdAndResidentUsername(Long id, String residentUsername);
+
+
     List<Complaint> findByCategory(Complaint.ComplaintCategory category);
 
     List<Complaint> findByApartmentNumber(String apartmentNumber);

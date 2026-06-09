@@ -31,6 +31,10 @@ public class Complaint {
     private LocalDateTime updatedAt;
     private String resolvedBy;
 
+    // Auth ownership: residents can only view/manage their own complaints
+    private String residentUsername;
+
+
     @Column(length = 500)
     private String resolutionNotes;
 
@@ -58,6 +62,8 @@ public class Complaint {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public String getResolvedBy() { return resolvedBy; }
     public String getResolutionNotes() { return resolutionNotes; }
+    public String getResidentUsername() { return residentUsername; }
+
 
     // ---- Setters ----
     public void setId(Long id) { this.id = id; }
@@ -70,6 +76,8 @@ public class Complaint {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setResolvedBy(String resolvedBy) { this.resolvedBy = resolvedBy; }
+    public void setResidentUsername(String residentUsername) { this.residentUsername = residentUsername; }
+
     public void setResolutionNotes(String resolutionNotes) { this.resolutionNotes = resolutionNotes; }
 
     public enum ComplaintStatus { OPEN, IN_PROGRESS, RESOLVED, CLOSED }

@@ -14,6 +14,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class ComplaintController {
 
+
     @Autowired
     private ComplaintService complaintService;
 
@@ -32,6 +33,7 @@ public class ComplaintController {
         return complaintService.getComplaintById(id).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Complaint>> getByStatus(@PathVariable String status) {

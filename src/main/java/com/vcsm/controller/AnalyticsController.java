@@ -11,7 +11,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/analytics")
 @CrossOrigin(origins = "*")
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 public class AnalyticsController {
+
+
 
     @Autowired
     private ComplaintService complaintService;
