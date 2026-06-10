@@ -45,11 +45,28 @@ public class EventService {
     public Event registerForEvent(Long id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found: " + id));
-        if (event.getRegistrations() < event.getMaxCapacity()) {
-            event.setRegistrations(event.getRegistrations() + 1);
-            return eventRepository.save(event);
+        // Event inactive
+        if (!event.isActive()) {
+          throw new RuntimeException("Event is not active");
         }
-        throw new RuntimeException("Event is at full capacity");
+        // Event already happened
+        if (event.getEventDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Registration closed. Event already started.");
+        }
+
+        // Capacity validation
+
+        if (event.getRegistrations() >= event.getMaxCapacity()) {
+            throw new RuntimeException(
+                "Event Full! Maximum capacity of "
+                        + event.getMaxCapacity()
+                        + " participants reached."
+            );
+        }
+        event.setRegistrations(event.getRegistrations() + 1);
+        return eventRepository.save(event);
+
+
     }
 
     public List<Event> recommendEvents(String keyword) {
