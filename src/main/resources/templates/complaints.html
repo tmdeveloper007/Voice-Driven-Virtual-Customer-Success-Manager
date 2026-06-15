@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="/css/shortcuts.css">
     <link rel="stylesheet" href="/css/typing-indicator.css">
     <link rel="stylesheet" href="/css/confirm-dialogs.css">
+    <link rel="stylesheet" href="/css/empty-states.css">
 </head>
 <body>
 
@@ -121,7 +122,19 @@
     <!-- Complaints Table with horizontal scroll on mobile -->
     <div class="card shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <div th:if="${complaints.empty}">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3 class="empty-state-title">No complaints yet</h3>
+                    <p class="empty-state-message">Your community is peaceful! When residents file complaints, they'll appear here.</p>
+                    <button class="empty-state-btn" data-bs-toggle="modal" data-bs-target="#fileComplaintModal">
+                        <i class="fas fa-plus me-1"></i> File First Complaint
+                    </button>
+                </div>
+            </div>
+            <table th:unless="${complaints.empty}" class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
@@ -135,9 +148,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${complaints.empty}">
-                        <td colspan="8" class="text-center text-muted py-4">No complaints found. File your first complaint! 🎯</td>
-                    </tr>
                     <tr th:each="c : ${complaints}">
                         <td th:text="${c.id}">1</td>
                         <td th:text="${c.residentName}">Name</td>

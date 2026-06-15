@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="/css/back-to-top.css">
     <link rel="stylesheet" href="/css/typing-indicator.css">
     <link rel="stylesheet" href="/css/confirm-dialogs.css">
+    <link rel="stylesheet" href="/css/empty-states.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -183,6 +184,26 @@
         window.spinnerManager.showOverlay();
     }
 
+    // Check if no data available
+    const hasData = stats.open > 0 || stats.inProgress > 0 || stats.resolved > 0 || stats.closed > 0;
+
+    if (!hasData && stats.open === 0 && stats.inProgress === 0 && stats.resolved === 0 && stats.closed === 0) {
+        // Show empty state for charts
+        document.getElementById('statusChartContainer').innerHTML = `
+            <div class="empty-state-small">
+                <div class="empty-state-icon">
+                    <i class="fas fa-chart-pie" style="font-size: 40px; color: #8b5cf6;"></i>
+                </div>
+                <p class="text-muted">No complaint data available yet</p>
+                <p class="small text-muted">When residents file complaints, statistics will appear here</p>
+            </div>
+        `;
+        if (window.spinnerManager) {
+            window.spinnerManager.hideOverlay();
+        }
+        return;
+    }
+
     // Status Chart
     const statusCtx = document.createElement('canvas');
     document.getElementById('statusChartContainer').innerHTML = '';
@@ -231,6 +252,24 @@
         .then(r => r.json())
         .then(data => {
             const cats = data.complaintsByCategory || {};
+            
+            // Check if no category data
+            if (Object.keys(cats).length === 0) {
+                document.getElementById('categoryChartContainer').innerHTML = `
+                    <div class="empty-state-small">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-chart-bar" style="font-size: 40px; color: #8b5cf6;"></i>
+                        </div>
+                        <p class="text-muted">No category data available</p>
+                        <p class="small text-muted">Data will appear once complaints are filed</p>
+                    </div>
+                `;
+                if (window.spinnerManager) {
+                    window.spinnerManager.hideOverlay();
+                }
+                return;
+            }
+            
             const categoryCtx = document.createElement('canvas');
             document.getElementById('categoryChartContainer').innerHTML = '';
             document.getElementById('categoryChartContainer').appendChild(categoryCtx);
