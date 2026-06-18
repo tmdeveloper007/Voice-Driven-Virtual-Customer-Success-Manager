@@ -19,6 +19,12 @@ public class ComplaintService {
     @Autowired
     private ComplaintRepository complaintRepository;
 
+    @Autowired
+   private AuditLogService auditLogService;
+
+     @Autowired
+     private NotificationService notificationService;
+
     private boolean isAdmin() {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) return false;
