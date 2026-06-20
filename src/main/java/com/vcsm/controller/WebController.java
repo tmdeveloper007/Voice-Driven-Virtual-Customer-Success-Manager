@@ -6,10 +6,21 @@ import com.vcsm.service.EventService;
 import com.vcsm.service.OmnidimService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
+import org.springframework.data.domain.PageRequest;
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +49,7 @@ public class WebController {
         return "landing";
     }
 
+
     @GetMapping("/chatbot")
     public String chatbot() {
         return "chatbot-ui";
@@ -53,10 +65,28 @@ public class WebController {
         return "profile";
     }
 
+
     @GetMapping("/onboarding")
     public String onboarding() {
         return "onboarding";
     }
+
+
+    @GetMapping("/complaints")
+public String complaintsPage(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Model model) {
+    
+    Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    Page<Complaint> complaintPage = complaintService.getPaginatedComplaints(pageable);
+    
+    model.addAttribute("complaints", complaintPage.getContent());
+    model.addAttribute("page", complaintPage);
+    model.addAttribute("stats", complaintService.getComplaintStats());
+    
+    return "complaints";
+}
 
     @GetMapping("/voice-analytics")
     public String voiceAnalytics() {
@@ -67,6 +97,8 @@ public class WebController {
     public String auditLogs() {
         return "audit-logs";
     }
+
+
 
     @GetMapping("/")
     public String dashboard(Model model) {
@@ -117,6 +149,16 @@ public class WebController {
     public String complaintsPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+
+            Model model) {
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Complaint> complaintPage = complaintService.getPaginatedComplaints(pageable);
+        
+        model.addAttribute("complaints", complaintPage.getContent());
+        model.addAttribute("page", complaintPage);
+        model.addAttribute("stats", complaintService.getComplaintStats());
+        
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String category,
@@ -147,6 +189,7 @@ public class WebController {
         model.addAttribute("complaints", complaintPage.getContent());
         model.addAttribute("page", complaintPage);
         model.addAttribute("stats", complaintService.getComplaintStats());
+
 
         return "complaints";
     }
@@ -192,4 +235,38 @@ public class WebController {
 
         return "analytics";
     }
+
+
+
+    @GetMapping("/voice-analytics")
+    public String voiceAnalytics() {
+        return "voice-analytics";
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "profile";
+
+    @GetMapping("/interaction-history")
+    public String interactionHistory(Model model) {
+        try {
+            Map<String, Long> stats = interactionService.getInteractionStats();
+            if (stats == null) {
+                stats = new HashMap<>();
+                stats.put("total", 0L);
+                stats.put("completed", 0L);
+                stats.put("pending", 0L);
+                stats.put("inProgress", 0L);
+                stats.put("positive", 0L);
+                stats.put("neutral", 0L);
+                stats.put("negative", 0L);
+            }
+            model.addAttribute("interactionStats", stats);
+        } catch (Exception e) {
+            model.addAttribute("interactionStats", new HashMap<>());
+        }
+        return "interaction-history";
+
+    }
+
 }

@@ -119,7 +119,7 @@
         </div>
         <div class="col-6 col-md-3">
             <div class="card text-center border-secondary h-100 stat-card">
-                <div class="card-body py-2">
+                <div class-card-body py-2">
                     <div class="stat-icon bg-secondary-soft mb-1">
                         <i class="fas fa-chart-bar text-secondary"></i>
                     </div>
@@ -129,6 +129,34 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Bulk Actions Toolbar -->
+    <div th:unless="${complaints.empty}" class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 bg-light rounded border">
+        <button class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+            <i class="fas fa-check-double me-1"></i> Select All
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">
+            <i class="fas fa-times me-1"></i> Deselect All
+        </button>
+        <span class="text-muted small mx-2" id="selectedCount">0 selected</span>
+        <div class="vr"></div>
+        <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
+            <option value="">Change Status...</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+        </select>
+        <button class="btn btn-sm btn-success" onclick="bulkUpdateStatus()">
+            <i class="fas fa-sync me-1"></i> Apply Status
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="bulkResolve()">
+            <i class="fas fa-check-circle me-1"></i> Bulk Resolve
+        </button>
+    </div>
+
+    <!-- Complaints Table with horizontal scroll on mobile -->
 
     <!-- Search & Filter Bar -->
     <div class="card shadow-sm mb-3">
@@ -190,6 +218,7 @@
     </div>
 
     <!-- Complaints Table -->
+
     <div class="card shadow-sm">
         <div class="table-responsive">
             <div th:if="${complaints.empty}">
@@ -207,6 +236,9 @@
             <table th:unless="${complaints.empty}" class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th>
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes(this)">
+                        </th>
                         <th>#</th>
                         <th>Resident</th>
                         <th>Apt</th>
@@ -220,6 +252,9 @@
                 </thead>
                 <tbody>
                     <tr th:each="c : ${complaints}">
+                        <td>
+                            <input type="checkbox" class="complaint-checkbox" th:value="${c.id}">
+                        </td>
                         <td th:text="${c.id}">1</td>
                         <td th:text="${c.residentName}">Name</td>
                         <td th:text="${c.apartmentNumber ?: '-'}">Apt</td>
@@ -416,7 +451,131 @@
         window.location.href = '/complaints';
     }
 
+
+
+    // Bulk Operations
+    let selectedIds = [];
+
+    function toggleAllCheckboxes(master) {
+        document.querySelectorAll('.complaint-checkbox').forEach(cb => {
+            cb.checked = master.checked;
+        });
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        selectedIds = [];
+        document.querySelectorAll('.complaint-checkbox:checked').forEach(cb => {
+            selectedIds.push(parseInt(cb.value));
+        });
+        document.getElementById('selectedCount').textContent = selectedIds.length + ' selected';
+    }
+
+    function selectAll() {
+        document.querySelectorAll('.complaint-checkbox').forEach(cb => cb.checked = true);
+        updateSelectedCount();
+    }
+
+    function deselectAll() {
+        document.querySelectorAll('.complaint-checkbox').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+    }
+
+    // Event listeners for checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.complaint-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectedCount);
+        });
+    });
+
+    function bulkUpdateStatus() {
+        const status = document.getElementById('bulkStatus').value;
+        if (!status) {
+            if (typeof toast !== 'undefined') {
+                toast.warning('Please select a status', 'Warning');
+            }
+            return;
+        }
+        if (selectedIds.length === 0) {
+            if (typeof toast !== 'undefined') {
+                toast.warning('Please select at least one complaint', 'Warning');
+            }
+            return;
+        }
+
+        fetch('/api/complaints/bulk/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                complaintIds: selectedIds,
+                status: status
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success > 0) {
+                if (typeof toast !== 'undefined') {
+                    toast.success(data.message, 'Success');
+                }
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                if (typeof toast !== 'undefined') {
+                    toast.error('Bulk update failed', 'Error');
+                }
+            }
+        })
+        .catch(err => {
+            if (typeof toast !== 'undefined') {
+                toast.error('Network error', 'Error');
+            }
+        });
+    }
+
+    function bulkResolve() {
+        if (selectedIds.length === 0) {
+            if (typeof toast !== 'undefined') {
+                toast.warning('Please select at least one complaint', 'Warning');
+            }
+            return;
+        }
+
+        if (!confirm('Are you sure you want to resolve ' + selectedIds.length + ' complaints?')) {
+            return;
+        }
+
+        fetch('/api/complaints/bulk/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                complaintIds: selectedIds,
+                resolutionNotes: 'Resolved via bulk action'
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success > 0) {
+                if (typeof toast !== 'undefined') {
+                    toast.success(data.message, 'Success');
+                }
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                if (typeof toast !== 'undefined') {
+                    toast.error('Bulk resolve failed', 'Error');
+                }
+            }
+        })
+        .catch(err => {
+            if (typeof toast !== 'undefined') {
+                toast.error('Network error', 'Error');
+            }
+        });
+    }
+
+
+    // Change page size
+
     // ===== PAGINATION =====
+
     function changePageSize(size) {
         const url = new URL(window.location.href);
         url.searchParams.set('size', size);

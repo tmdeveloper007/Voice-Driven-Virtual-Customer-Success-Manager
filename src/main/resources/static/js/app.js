@@ -460,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.complaint-checkbox').forEach(cb => {
         cb.addEventListener('change', updateSelectedCount);
     });
+
 });
 
 // ===== WEBSOCKET NOTIFICATIONS =====
@@ -622,5 +623,10 @@ document.addEventListener('DOMContentLoaded', function() {
         connectWebSocket();
         updateNotificationCount();
     }, 500);
+
+
 });
+
+});
+
 
