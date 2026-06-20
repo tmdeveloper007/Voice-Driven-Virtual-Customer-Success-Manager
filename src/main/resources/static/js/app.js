@@ -464,7 +464,9 @@ document.addEventListener('DOMContentLoaded', function() {
         cb.addEventListener('change', updateSelectedCount);
     });
 
+
 });
+
 
 });
 
@@ -628,6 +630,11 @@ document.addEventListener('DOMContentLoaded', function() {
         connectWebSocket();
         updateNotificationCount();
     }, 500);
+
+
+});
+
+
 });
 
 

@@ -6,10 +6,21 @@ import com.vcsm.service.EventService;
 import com.vcsm.service.OmnidimService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
+import org.springframework.data.domain.PageRequest;
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,6 +72,24 @@ public class WebController {
     }
 
 
+
+    @GetMapping("/complaints")
+public String complaintsPage(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Model model) {
+    
+    Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    Page<Complaint> complaintPage = complaintService.getPaginatedComplaints(pageable);
+    
+    model.addAttribute("complaints", complaintPage.getContent());
+    model.addAttribute("page", complaintPage);
+    model.addAttribute("stats", complaintService.getComplaintStats());
+    
+    return "complaints";
+}
+
+
     @GetMapping("/voice-analytics")
     public String voiceAnalytics() {
         return "voice-analytics";
@@ -70,6 +99,7 @@ public class WebController {
     public String auditLogs() {
         return "audit-logs";
     }
+
 
 
     @GetMapping("/")
@@ -219,11 +249,13 @@ public class WebController {
     @GetMapping("/profile")
     public String profile() {
         return "profile";
+
     }
     @GetMapping("/audit-logs")
 public String auditLogs() {
     return "audit-logs";
 }
+
 
     @GetMapping("/interaction-history")
     public String interactionHistory(Model model) {
@@ -244,6 +276,11 @@ public String auditLogs() {
             model.addAttribute("interactionStats", new HashMap<>());
         }
         return "interaction-history";
+
+    }
+
+
+
     }
 
 

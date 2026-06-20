@@ -59,6 +59,8 @@ List<Long> findAllIds();
 @Query("SELECT c.id FROM Complaint c WHERE c.status = :status")
 List<Long> findIdsByStatus(@Param("status") Complaint.ComplaintStatus status);
 
+
+
     Page<Complaint> findAll(Pageable pageable);
 Page<Complaint> findByResidentUsername(String username, Pageable pageable);
 }
