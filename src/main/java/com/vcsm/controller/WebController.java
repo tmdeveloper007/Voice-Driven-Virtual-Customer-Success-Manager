@@ -41,6 +41,10 @@ public class WebController {
     public String landing() {
         return "landing";
     }
+    @GetMapping("/login")
+     public String login() {
+    return "login";
+    }
 
 
     @GetMapping("/chatbot")
