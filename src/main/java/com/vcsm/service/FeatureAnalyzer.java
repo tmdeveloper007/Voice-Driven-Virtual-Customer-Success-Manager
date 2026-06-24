@@ -35,9 +35,9 @@ public class FeatureAnalyzer {
      * Identify features to evolve (enable/disable)
      */
     public List<String> getEvolutionRecommendations() {
-        FeatureAnalysis analysis = analyzeFeatures();
-        return analysis.getEvolutionRecommendations();
-    }
+    FeatureAnalysis analysis = analyzeFeatures();
+    return analysis.getRecommendations(); 
+}
 
     /**
      * Calculate feature health score
