@@ -1,5 +1,6 @@
 package com.vcsm.security;
 
+import com.vcsm.security.hmac.HmacAuthenticationFilter;
 import com.vcsm.security.jwt.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,9 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
 
+    @Autowired
+    private HmacAuthenticationFilter hmacAuthenticationFilter;
+
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
@@ -46,7 +50,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        hmacAuthenticationFilter,
+                        JwtAuthFilter.class
+                )
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
