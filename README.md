@@ -221,6 +221,12 @@ The application is currently not deployed. It can be run locally using the setup
 4. Push branch
 5. Open PR
 
+### 👥 Contributors
+
+Thanks to all contributors ❤️
+
+[![Contributors](https://contrib.rocks/image?repo=ArpitaVerma16/Voice-Driven-Virtual-Customer-Success-Manager)](https://github.com/ArpitaVerma16/Voice-Driven-Virtual-Customer-Success-Manager/graphs/contributors)
+
 ---
 
 ## 🚀 Future Enhancements
