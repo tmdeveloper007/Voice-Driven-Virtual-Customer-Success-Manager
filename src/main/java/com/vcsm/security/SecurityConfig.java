@@ -36,6 +36,8 @@ public class SecurityConfig {
 
     @Autowired
     private HmacAuthenticationFilter hmacAuthenticationFilter;
+
+    @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
     @Bean
@@ -66,7 +68,7 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(
                         hmacAuthenticationFilter,
-                        JwtAuthFilter.class
+                        UsernamePasswordAuthenticationFilter.class
                 )
                 .addFilterBefore(
                         jwtAuthFilter,

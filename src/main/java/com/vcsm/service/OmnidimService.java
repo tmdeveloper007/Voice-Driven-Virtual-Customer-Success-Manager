@@ -10,9 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import com.vcsm.model.VenueReservation;
 
 @Service
 public class OmnidimService {
@@ -40,19 +42,68 @@ public class OmnidimService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SchedulingOptimizer schedulingOptimizer;
+
+    private final Map<Long, PendingBookingState> pendingBookings = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static class PendingBookingState {
+        private final String venueName;
+        private final LocalDateTime requestedStart;
+        private final LocalDateTime requestedEnd;
+        private final List<LocalDateTime[]> alternatives;
+
+        public PendingBookingState(String venueName, LocalDateTime requestedStart, LocalDateTime requestedEnd, List<LocalDateTime[]> alternatives) {
+            this.venueName = venueName;
+            this.requestedStart = requestedStart;
+            this.requestedEnd = requestedEnd;
+            this.alternatives = alternatives;
+        }
+
+        public String getVenueName() { return venueName; }
+        public LocalDateTime getRequestedStart() { return requestedStart; }
+        public LocalDateTime getRequestedEnd() { return requestedEnd; }
+        public List<LocalDateTime[]> getAlternatives() { return alternatives; }
+    }
+
     public Map<String, Object> processVoiceCommand(String transcript) {
         long startTime = System.currentTimeMillis();
         
         log.info("Processing: " + transcript);
         String lower = transcript.toLowerCase();
-        String intent = detectIntent(lower);
-        String response = switch (intent) {
-            case "FILE_COMPLAINT"  -> handleComplaintVoice(lower);
-            case "CHECK_COMPLAINT" -> handleStatusCheck();
-            case "EVENT_QUERY"     -> handleEventQuery();
-            case "ANALYTICS"       -> handleAnalytics();
-            default -> "I'm your Virtual Community Manager. I can help with complaints, events, and analytics!";
-        };
+        User user = null;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth != null ? auth.getName() : null;
+        if (email != null) {
+            user = userRepository.findByEmail(email).orElse(null);
+        }
+        if (user == null) {
+            user = userRepository.findById(1L).orElse(null); // Fallback to 1L
+        }
+
+        String response = null;
+        String intent = "UNKNOWN";
+
+        // Check for pending follow-up state first
+        if (user != null && pendingBookings.containsKey(user.getId())) {
+            PendingBookingState pending = pendingBookings.get(user.getId());
+            response = handleFollowUp(user, pending, lower);
+            if (response != null) {
+                intent = "BOOK_VENUE_FOLLOWUP";
+            }
+        }
+
+        if (response == null) {
+            intent = detectIntent(lower);
+            response = switch (intent) {
+                case "FILE_COMPLAINT"  -> handleComplaintVoice(lower);
+                case "CHECK_COMPLAINT" -> handleStatusCheck();
+                case "EVENT_QUERY"     -> handleEventQuery();
+                case "ANALYTICS"       -> handleAnalytics();
+                case "BOOK_VENUE"      -> handleBookVenue(user, lower);
+                default -> "I'm your Virtual Community Manager. I can help with complaints, events, and analytics!";
+            };
+        }
 
         long responseTime = System.currentTimeMillis() - startTime;
 
@@ -65,19 +116,6 @@ public class OmnidimService {
 
         // Log voice analytics
         try {
-
-            User user = userRepository.findById(1L).orElse(null); // Replace with actual user
-
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String email = auth != null ? auth.getName() : null;
-            user = null;
-            if (email != null) {
-                user = userRepository.findByEmail(email).orElse(null);
-            }
-            if (user == null) {
-                user = userRepository.findById(1L).orElse(null); // Fallback to 1L
-            }
-
             if (user != null) {
                 boolean success = !intent.equals("UNKNOWN");
                 voiceAnalyticsService.logCommand(user, transcript, intent, success, responseTime);
@@ -98,6 +136,11 @@ public class OmnidimService {
     }
 
     private String detectIntent(String t) {
+        if (t.contains("book") || t.contains("reserve") || t.contains("schedule")) {
+            if (t.contains("hall") || t.contains("clubhouse") || t.contains("gym") || t.contains("venue")) {
+                return "BOOK_VENUE";
+            }
+        }
         if (t.contains("status") || t.contains("check") || t.contains("my complaint")) return "CHECK_COMPLAINT";
         if (t.contains("complaint") || t.contains("noise") || t.contains("maintenance")
                 || t.contains("broken") || t.contains("security") || t.contains("parking")) return "FILE_COMPLAINT";
@@ -162,5 +205,152 @@ public class OmnidimService {
 
     public List<VoiceCommand> getRecentCommands() {
         return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+
+    private String handleBookVenue(User user, String transcript) {
+        String venueName = "Venue";
+        if (transcript.contains("clubhouse")) venueName = "Clubhouse";
+        else if (transcript.contains("gym")) venueName = "Gym";
+        else if (transcript.contains("hall") || transcript.contains("community hall")) venueName = "Community Hall";
+        
+        LocalDateTime[] times = parseBookingTime(transcript);
+        LocalDateTime start = times[0];
+        LocalDateTime end = times[1];
+        
+        if (schedulingOptimizer.hasConflict(venueName, start, end)) {
+            List<LocalDateTime[]> alternatives = schedulingOptimizer.findAlternatives(venueName, start, end);
+            if (alternatives.isEmpty()) {
+                return "The requested slot is occupied, and no alternatives were found in the near future.";
+            }
+            
+            if (user != null) {
+                pendingBookings.put(user.getId(), new PendingBookingState(venueName, start, end, alternatives));
+            }
+            
+            java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("h:mm a");
+            StringBuilder sb = new StringBuilder("That slot is taken, but I can book you at ");
+            for (int i = 0; i < alternatives.size(); i++) {
+                sb.append(alternatives.get(i)[0].format(timeFormatter));
+                if (i < alternatives.size() - 1) {
+                    sb.append(" or ");
+                }
+            }
+            sb.append(" instead. Which do you prefer?");
+            return sb.toString();
+        } else {
+            schedulingOptimizer.bookVenue(venueName, user, start, end);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd h:mm a");
+            return "Successfully booked " + venueName + " from " + start.format(formatter) + " to " + end.format(java.time.format.DateTimeFormatter.ofPattern("h:mm a")) + ".";
+        }
+    }
+
+    private LocalDateTime[] parseBookingTime(String t) {
+        java.time.LocalDate date = java.time.LocalDate.now().plusDays(1);
+        if (t.contains("today")) {
+            date = java.time.LocalDate.now();
+        } else if (t.contains("tomorrow")) {
+            date = java.time.LocalDate.now().plusDays(1);
+        } else if (t.contains("monday")) {
+            date = getNextDayOfWeek(java.time.DayOfWeek.MONDAY);
+        }
+        
+        int startHour = 14; 
+        int startMin = 0;
+        int durationMinutes = 60; 
+        
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)(:(\\d+))?\\s*(am|pm)").matcher(t);
+        if (m.find()) {
+            startHour = Integer.parseInt(m.group(1));
+            if (m.group(3) != null) {
+                startMin = Integer.parseInt(m.group(3));
+            }
+            String ampm = m.group(4);
+            if ("pm".equalsIgnoreCase(ampm) && startHour < 12) {
+                startHour += 12;
+            } else if ("am".equalsIgnoreCase(ampm) && startHour == 12) {
+                startHour = 0;
+            }
+        }
+        
+        java.util.regex.Matcher durMatcher = java.util.regex.Pattern.compile("for (\\d+)\\s*hour").matcher(t);
+        if (durMatcher.find()) {
+            durationMinutes = Integer.parseInt(durMatcher.group(1)) * 60;
+        } else {
+            java.util.regex.Matcher endMatcher = java.util.regex.Pattern.compile("(?:to|until) (\\d+)(:(\\d+))?\\s*(am|pm)").matcher(t);
+            if (endMatcher.find()) {
+                int endHour = Integer.parseInt(endMatcher.group(1));
+                int endMin = 0;
+                if (endMatcher.group(3) != null) {
+                    endMin = Integer.parseInt(endMatcher.group(3));
+                }
+                String endAmpm = endMatcher.group(4);
+                if ("pm".equalsIgnoreCase(endAmpm) && endHour < 12) {
+                    endHour += 12;
+                } else if ("am".equalsIgnoreCase(endAmpm) && endHour == 12) {
+                    endHour = 0;
+                }
+                LocalDateTime startTemp = date.atTime(startHour, startMin);
+                LocalDateTime endTemp = date.atTime(endHour, endMin);
+                if (endTemp.isAfter(startTemp)) {
+                    durationMinutes = (int) java.time.temporal.ChronoUnit.MINUTES.between(startTemp, endTemp);
+                }
+            }
+        }
+        
+        LocalDateTime start = date.atTime(startHour, startMin);
+        LocalDateTime end = start.plusMinutes(durationMinutes);
+        return new LocalDateTime[]{start, end};
+    }
+    
+    private java.time.LocalDate getNextDayOfWeek(java.time.DayOfWeek dayOfWeek) {
+        java.time.LocalDate d = java.time.LocalDate.now();
+        while (d.getDayOfWeek() != dayOfWeek) {
+            d = d.plusDays(1);
+        }
+        return d;
+    }
+    
+    private String handleFollowUp(User user, PendingBookingState pending, String transcript) {
+        String lower = transcript.toLowerCase();
+        
+        if (lower.contains("cancel") || lower.contains("no") || lower.contains("stop")) {
+            pendingBookings.remove(user.getId());
+            return "Booking operation cancelled.";
+        }
+        
+        int selectedIndex = -1;
+        if (lower.contains("first") || lower.contains("1st") || lower.contains("one") || lower.contains("option 1")) {
+            selectedIndex = 0;
+        } else if (lower.contains("second") || lower.contains("2nd") || lower.contains("two") || lower.contains("option 2")) {
+            selectedIndex = 1;
+        } else {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)\\s*(am|pm)").matcher(lower);
+            if (m.find()) {
+                int hour = Integer.parseInt(m.group(1));
+                String ampm = m.group(2);
+                if ("pm".equalsIgnoreCase(ampm) && hour < 12) hour += 12;
+                else if ("am".equalsIgnoreCase(ampm) && hour == 12) hour = 0;
+                
+                List<LocalDateTime[]> alternatives = pending.getAlternatives();
+                for (int i = 0; i < alternatives.size(); i++) {
+                    if (alternatives.get(i)[0].getHour() == hour) {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (selectedIndex >= 0 && selectedIndex < pending.getAlternatives().size()) {
+            LocalDateTime[] slot = pending.getAlternatives().get(selectedIndex);
+            pendingBookings.remove(user.getId());
+            
+            schedulingOptimizer.bookVenue(pending.getVenueName(), user, slot[0], slot[1]);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd h:mm a");
+            return "Successfully booked " + pending.getVenueName() + " from " + slot[0].format(formatter) + " to " + slot[1].format(java.time.format.DateTimeFormatter.ofPattern("h:mm a")) + ".";
+        }
+        
+        pendingBookings.remove(user.getId());
+        return null;
     }
 }
