@@ -3,6 +3,8 @@ package com.vcsm.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,8 @@ import java.util.*;
 
 @Service
 public class ChatbotService {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatbotService.class);
 
     private List<Map<String, Object>> faqs = new ArrayList<>();
     private Map<String, List<Integer>> keywordIndex = new HashMap<>();
@@ -43,10 +47,10 @@ public class ChatbotService {
                 index++;
             }
 
-            System.out.println("✅ Chatbot loaded with " + faqs.size() + " FAQs");
+            log.info("✅ Chatbot loaded with " + faqs.size() + " FAQs");
 
         } catch (Exception e) {
-            System.err.println("❌ Failed to load FAQs: " + e.getMessage());
+            log.error("❌ Failed to load FAQs: " + e.getMessage());
         }
     }
 

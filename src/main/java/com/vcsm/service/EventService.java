@@ -33,13 +33,7 @@ public class EventService {
     @Autowired
     private EmailLogRepository emailLogRepository;
 
-    @Autowired
-    private com.vcsm.security.jwt.JwtService jwtService;
-
-    @Autowired
-    @org.springframework.context.annotation.Lazy
-    private ReminderScheduler reminderScheduler;
-
+    @Transactional
     public Event createEvent(Event event) { return eventRepository.save(event); }
 
     public List<Event> getAllEvents() { return eventRepository.findAll(); }
@@ -56,6 +50,7 @@ public class EventService {
 
     public Optional<Event> getEventById(Long id) { return eventRepository.findById(id); }
 
+    @Transactional
     public Event updateEvent(Long id, Event updated) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found: " + id));
@@ -68,6 +63,7 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    @Transactional
     public Event registerForEvent(Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found: " + eventId));

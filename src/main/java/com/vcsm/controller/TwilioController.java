@@ -8,6 +8,8 @@ import com.vcsm.repository.ComplaintRepository;
 import com.vcsm.repository.EventRepository;
 import com.vcsm.repository.UserRepository;
 import com.vcsm.service.TwilioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api/twilio")
 @CrossOrigin(origins = "*")
 public class TwilioController {
+
+    private static final Logger log = LoggerFactory.getLogger(TwilioController.class);
 
     @Autowired
     private TwilioService twilioService;
@@ -144,7 +148,7 @@ public class TwilioController {
             @RequestParam(required = false) String CallSid) {
         
         // In production, process the recording using speech-to-text
-        System.out.println("📹 Recording URL: " + RecordingUrl);
+        log.info("📹 Recording URL: " + RecordingUrl);
         
         // Acknowledge receipt
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
