@@ -1,6 +1,5 @@
 package com.vcsm.security;
 
-import com.vcsm.security.filter.RateLimitingFilter;
 import com.vcsm.security.hmac.HmacAuthenticationFilter;
 import com.vcsm.security.jwt.JwtAuthFilter;
 import com.vcsm.security.service.UserDetailsServiceImpl;
@@ -39,9 +38,6 @@ public class SecurityConfig {
     private HmacAuthenticationFilter hmacAuthenticationFilter;
 
     @Autowired
-    private RateLimitingFilter rateLimitingFilter;
-
-    @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
     @Bean
@@ -67,20 +63,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/voice/command").permitAll()
                         .requestMatchers("/api/voice/feedback/**").permitAll()
                         .requestMatchers("/api/chatbot/**").permitAll()
+                        .requestMatchers("/api/iot/alert").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
-                        jwtAuthFilter,
+                        hmacAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
                 .addFilterBefore(
-                        hmacAuthenticationFilter,
-                        JwtAuthFilter.class
-                )
-                .addFilterBefore(
-                        rateLimitingFilter,
-                        HmacAuthenticationFilter.class
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 )
                 .httpBasic(Customizer.withDefaults());
 
@@ -94,14 +87,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/landing", "/login", "/signup",
-                                "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                        .requestMatchers("/",
-                                "/complaints/**",
-                                "/events/**",
-                                "/analytics/**",
-                                "/interaction-history/**",
-                                "/voice-analytics/**").authenticated()
+                        .requestMatchers("/landing", "/login", "/signup", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/complaints/**", "/events/**", "/analytics/**", "/interaction-history/**", "/voice-analytics/**").authenticated()
                         .requestMatchers("/chatbot/**", "/voice-templates/**").authenticated()
                         .requestMatchers("/profile/**", "/onboarding/**").authenticated()
                         .requestMatchers("/audit-logs/**").hasRole("ADMIN")
@@ -130,7 +117,6 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 

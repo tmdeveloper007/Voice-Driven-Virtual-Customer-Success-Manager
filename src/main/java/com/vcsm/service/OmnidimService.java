@@ -3,6 +3,7 @@ package com.vcsm.service;
 import com.vcsm.model.VoiceCommand;
 import com.vcsm.model.Complaint;
 import com.vcsm.model.User;
+import com.vcsm.model.Event;
 import com.vcsm.repository.VoiceCommandRepository;
 import com.vcsm.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,7 @@ public class OmnidimService {
             case "CHECK_COMPLAINT" -> handleStatusCheck();
             case "EVENT_QUERY"     -> handleEventQuery();
             case "ANALYTICS"       -> handleAnalytics();
+            case "BOOK_EVENT"      -> handleEventBooking(lower);
             default -> "I'm your Virtual Community Manager. I can help with complaints, events, and analytics!";
         };
 
@@ -101,6 +103,7 @@ public class OmnidimService {
         if (t.contains("status") || t.contains("check") || t.contains("my complaint")) return "CHECK_COMPLAINT";
         if (t.contains("complaint") || t.contains("noise") || t.contains("maintenance")
                 || t.contains("broken") || t.contains("security") || t.contains("parking")) return "FILE_COMPLAINT";
+        if (t.contains("book") || t.contains("ticket") || t.contains("register")) return "BOOK_EVENT";
         if (t.contains("event") || t.contains("sports") || t.contains("cultural")
                 || t.contains("activity")) return "EVENT_QUERY";
         if (t.contains("analytics") || t.contains("how many") || t.contains("total")
@@ -162,5 +165,58 @@ public class OmnidimService {
 
     public List<VoiceCommand> getRecentCommands() {
         return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+
+    private String handleEventBooking(String t) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth != null ? auth.getName() : null;
+        User user = null;
+        if (email != null) {
+            user = userRepository.findByEmail(email).orElse(null);
+        }
+        if (user == null) {
+            user = userRepository.findById(1L).orElse(null); // Fallback to 1L
+        }
+        if (user == null) {
+            return "Unable to book event: user session not found.";
+        }
+
+        List<Event> events = eventService.getActiveEvents();
+        Event matchedEvent = null;
+        
+        for (Event event : events) {
+            String eventName = event.getName().toLowerCase();
+            if (t.contains(eventName)) {
+                matchedEvent = event;
+                break;
+            }
+        }
+
+        if (matchedEvent == null) {
+            for (Event event : events) {
+                String[] words = event.getName().toLowerCase().split("\\s+");
+                int matchCount = 0;
+                for (String word : words) {
+                    if (word.length() > 3 && t.contains(word)) {
+                        matchCount++;
+                    }
+                }
+                if (matchCount > 0) {
+                    matchedEvent = event;
+                    break;
+                }
+            }
+        }
+
+        if (matchedEvent == null) {
+            return "Sorry, I couldn't find an event matching that description. Please try specifying the exact event name.";
+        }
+
+        try {
+            Event updatedEvent = eventService.registerForEvent(matchedEvent.getId(), user.getId());
+            return "Success! You have been registered for " + updatedEvent.getName() + ". A confirmation email with your ticket check-in QR code has been sent to " + user.getEmail() + ".";
+        } catch (Exception e) {
+            return "Could not complete booking: " + e.getMessage();
+        }
     }
 }
