@@ -109,8 +109,9 @@ Repository --> Database
 ## ▶️ Installation and Setup
 
 ### Prerequisites
-- Java 17+
-- Maven 3.8+
+
+- Java 17 or later
+- Maven 3.8 or later (optional when using the Maven Wrapper)
 
 ### Steps
 
@@ -124,6 +125,71 @@ cd voice-customer-success-manager
 # 3. Open in browser
 http://localhost:8080
 ```
+
+### Windows (PowerShell)
+
+If you are using Windows, open **PowerShell** in the project directory and run:
+
+```powershell
+# Run the application using the Maven Wrapper
+.\mvnw.cmd spring-boot:run
+```
+
+If Maven is installed globally, you can also use:
+
+```powershell
+mvn spring-boot:run
+```
+
+After the application starts, open:
+
+```
+http://localhost:8080
+```
+
+### Verify Java Installation
+
+Run the following command to verify that Java is installed correctly:
+
+```powershell
+java -version
+```
+
+The project requires **Java 17 or later**.
+
+### Verify Maven Installation (Optional)
+
+If you are not using the Maven Wrapper, verify Maven with:
+
+```powershell
+mvn -version
+```
+
+### Windows-specific Troubleshooting
+
+#### Java is not recognized
+
+If PowerShell displays:
+
+```text
+'java' is not recognized as an internal or external command
+```
+
+Ensure that:
+
+- Java 17 or later is installed.
+- The `JAVA_HOME` environment variable is configured.
+- The Java `bin` directory is included in your system `PATH`.
+
+#### mvnw.cmd cannot be found
+
+Run the command from the project's root directory where the `mvnw.cmd` file is located.
+
+#### Port 8080 is already in use
+
+Stop the process using port **8080** or configure a different server port in `application.properties`.
+
+
 
 ### H2 Database Console (for dev/debugging)
 ```
