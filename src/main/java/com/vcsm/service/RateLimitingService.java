@@ -2,7 +2,7 @@ package com.vcsm.service;
 
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
-import com.vcsm.config.RateLimitConfig;
+import com.vcsm.config.VoiceRateLimitConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,7 @@ public class RateLimitingService {
     private LoadingCache<String, RateLimiter> authenticatedLimiters;
 
     @Autowired
-    private RateLimitConfig config;
+    private VoiceRateLimitConfig config;
 
     public boolean isAllowed(String clientIp) throws ExecutionException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

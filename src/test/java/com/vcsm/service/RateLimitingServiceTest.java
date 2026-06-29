@@ -2,7 +2,7 @@ package com.vcsm.service;
 
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
-import com.vcsm.config.RateLimitConfig;
+import com.vcsm.config.VoiceRateLimitConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ public class RateLimitingServiceTest {
     private LoadingCache<String, RateLimiter> authenticatedLimiters;
 
     @Mock
-    private RateLimitConfig config;
+    private VoiceRateLimitConfig config;
 
     @BeforeEach
     public void setUp() {
