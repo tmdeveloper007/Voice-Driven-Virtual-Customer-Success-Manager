@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/twilio")
-@CrossOrigin(origins = "*")
 public class TwilioController {
 
     @Autowired

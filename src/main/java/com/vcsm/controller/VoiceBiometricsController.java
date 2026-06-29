@@ -20,7 +20,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/voice/biometrics")
-@CrossOrigin(origins = "*")
 public class VoiceBiometricsController {
 
     @Autowired

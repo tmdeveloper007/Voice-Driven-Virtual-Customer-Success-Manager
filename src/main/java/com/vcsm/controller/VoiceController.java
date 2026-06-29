@@ -24,7 +24,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/voice")
-@CrossOrigin(origins = "*")
 public class VoiceController {
 
     @Autowired
@@ -164,3 +163,4 @@ public class VoiceController {
         return ResponseEntity.ok(Map.of("message", "IVR Flow Configuration updated successfully", "success", true));
     }
 }
+
