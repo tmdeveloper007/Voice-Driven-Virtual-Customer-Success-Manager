@@ -2,6 +2,7 @@ package com.vcsm.controller;
 
 import com.vcsm.dto.SentimentResult;
 import com.vcsm.service.SentimentAnalysisServiceImpl;
+import com.vcsm.service.WebhookNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,14 @@ public class SentimentAnalysisController {
     @Autowired
     private SentimentAnalysisServiceImpl sentimentService;
 
+    @Autowired
+    private WebhookNotificationService webhookNotificationService;
+
     @PostMapping("/analyze")
     public ResponseEntity<Map<String, Object>> analyzeTranscript(@RequestBody Map<String, String> request) {
         String transcript = request.get("transcript");
+        String sessionId = request.get("sessionId");
+        String customerId = request.get("customerId");
 
         if (transcript == null || transcript.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
@@ -36,9 +42,15 @@ public class SentimentAnalysisController {
         response.put("negativeKeywordCount", result.getNegativeKeywords());
         response.put("positiveKeywordCount", result.getPositiveKeywords());
         response.put("requiresEscalation", result.isRequiresEscalation());
+        
         if (result.isRequiresEscalation()) {
-            response.put("escalationReason", result.getEscalationReason());
+            String escalationReason = result.getEscalationReason();
+            response.put("escalationReason", escalationReason);
+            
+            // Trigger webhook alert for urgent escalation
+            webhookNotificationService.sendEscalationAlert(sessionId, customerId, escalationReason);
         }
+        
         response.put("success", true);
 
         return ResponseEntity.ok(response);
