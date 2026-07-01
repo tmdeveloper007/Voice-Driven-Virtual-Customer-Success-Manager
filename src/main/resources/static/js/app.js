@@ -25,13 +25,21 @@ function startVoice() {
         document.getElementById('micBtn').classList.add('btn-danger', 'recording');
         document.getElementById('micBtn').classList.remove('btn-purple');
         document.getElementById('micIcon').className = 'fas fa-stop';
+        if (typeof typingIndicator !== 'undefined') {
+    typingIndicator.showListening();
+}
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById('voiceInput').value = transcript;
-        sendCommand();
-    };
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('voiceInput').value = transcript;
+
+    if (typeof typingIndicator !== 'undefined') {
+        typingIndicator.showProcessing();
+    }
+
+    sendCommand();
+};
 
     recognition.onend = () => {
         isRecording = false;
@@ -43,6 +51,9 @@ function startVoice() {
     recognition.onerror = (e) => {
         console.error('Voice error:', e);
         isRecording = false;
+        if (typeof typingIndicator !== 'undefined') {
+            typingIndicator.hide();
+        }
     };
 
     recognition.start();
@@ -396,7 +407,7 @@ async function registerEvent(id) {
 
 }
 
-}
+
 
 // ===== BULK OPERATIONS =====
 let selectedIds = [];
@@ -522,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-});
+
 
 // ===== WEBSOCKET NOTIFICATIONS =====
 let stompClient = null;
@@ -689,6 +700,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-});
+
 
 
