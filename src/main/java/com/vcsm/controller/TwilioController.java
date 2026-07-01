@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/twilio")
-@CrossOrigin(origins = "*")
 public class TwilioController {
 
     @Autowired
@@ -43,7 +42,7 @@ public class TwilioController {
      * Initiate a call
      */
     @PostMapping("/call")
-    public ResponseEntity<Map<String, Object>> initiateCall(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> initiateCall(@Valid @RequestBody Map<String, String> request) {
         String toNumber = request.get("toNumber");
         String userId = request.get("userId");
 
@@ -144,7 +143,7 @@ public class TwilioController {
             @RequestParam(required = false) String CallSid) {
         
         // In production, process the recording using speech-to-text
-        System.out.println("📹 Recording URL: " + RecordingUrl);
+        log.info("📹 Recording URL: " + RecordingUrl);
         
         // Acknowledge receipt
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
@@ -234,7 +233,7 @@ public class TwilioController {
      * Send SMS
      */
     @PostMapping("/sms")
-    public ResponseEntity<Map<String, Object>> sendSms(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> sendSms(@Valid @RequestBody Map<String, String> request) {
         String toNumber = request.get("toNumber");
         String message = request.get("message");
 
