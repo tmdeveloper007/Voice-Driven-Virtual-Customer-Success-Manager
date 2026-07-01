@@ -95,7 +95,11 @@ public class VoiceController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<VoiceCommand>> history() {
-        return ResponseEntity.ok(omnidimService.getRecentCommands());
+    public ResponseEntity<List<VoiceCommand>> history(
+            @RequestParam(required = false) Boolean success) {
+
+        return ResponseEntity.ok(
+                omnidimService.getRecentCommands(success)
+        );
     }
 }

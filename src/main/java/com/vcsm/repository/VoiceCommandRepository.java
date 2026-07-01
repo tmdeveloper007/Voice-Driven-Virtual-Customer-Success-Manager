@@ -10,4 +10,5 @@ import java.util.List;
 public interface VoiceCommandRepository extends JpaRepository<VoiceCommand, Long> {
     List<VoiceCommand> findByIntent(String intent);
     List<VoiceCommand> findTop10ByOrderByCreatedAtDesc();
+    List<VoiceCommand> findByProcessedOrderByCreatedAtDesc(boolean processed);
 }

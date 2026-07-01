@@ -163,4 +163,13 @@ public class OmnidimService {
     public List<VoiceCommand> getRecentCommands() {
         return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
     }
+
+    public List<VoiceCommand> getRecentCommands(Boolean success) {
+
+        if (success == null) {
+            return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
+        }
+
+        return voiceCommandRepository.findByProcessedOrderByCreatedAtDesc(success);
+    }
 }
