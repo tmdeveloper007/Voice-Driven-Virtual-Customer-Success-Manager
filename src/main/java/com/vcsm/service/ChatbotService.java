@@ -47,9 +47,10 @@ public class ChatbotService {
                 index++;
             }
 
-            System.out.println("✅ Chatbot loaded with " + faqs.size() + " FAQs");
+            log.info("✅ Chatbot loaded with " + faqs.size() + " FAQs");
 
         } catch (Exception e) {
+            log.error("❌ Failed to load FAQs: " + e.getMessage());
             log.error("Failed to load FAQs: {}", e.getMessage(), e);
         }
     }

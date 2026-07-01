@@ -44,6 +44,17 @@ public class ComplaintService {
     @Autowired
     private BlockchainService blockchainService;
 
+    @Autowired
+    private EmailService emailService;
+
+
+    private void safelyExecute(Runnable operation, String description) {
+        try {
+            operation.run();
+        } catch (Exception e) {
+            log.error("Failed: " + description, e);
+        }
+    }
 
     private void safelyExecute(Runnable operation, String description) {
         try {
@@ -98,8 +109,7 @@ public class ComplaintService {
 
         log.info("📝 Filing complaint for user: " + username + " with priority: " + priority);
 
-        // Log user activity
-        try {
+        safelyExecute(() -> {
             User user = getCurrentUser();
             if (user != null) {
                 String description = "Filed complaint: " + saved.getDescription();
@@ -108,6 +118,7 @@ public class ComplaintService {
                 }
                 userActivityService.logActivity(user, "COMPLAINT", description, saved.getId());
             }
+        }, "log user activity for complaint filing");
         } catch (Exception e) {
             log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
@@ -125,9 +136,12 @@ public class ComplaintService {
                 );
             }
         }, "send notification for complaint filing");
+        }, "send notification for complaint filing");
         } catch (Exception e) {
             log.warn("Failed to send notification: {}", e.getMessage(), e);
         }
+
+        safelyExecute(() -> blockchainService.addBlock(saved, "COMPLAINT_CREATED"), "add blockchain entry for complaint creation");
 
 
         safelyExecute(() -> blockchainService.addBlock(saved, "COMPLAINT_CREATED"), "add blockchain entry for complaint creation");
@@ -212,7 +226,30 @@ public class ComplaintService {
         if (notes != null && !notes.isBlank()) complaint.setResolutionNotes(notes);
         
         Complaint updated = complaintRepository.save(complaint);
+        try {
+            User user = getComplaintUser(id);
 
+            if (user != null && user.getEmail() != null && !user.getEmail().isBlank()) {
+                String subject = "Complaint Status Updated - #" + id;
+
+                String emailBody =
+                        "<p>Hello " + user.getName() + ",</p>" +
+                        "<p>Your complaint status has been updated.</p>" +
+                        "<p><strong>Complaint ID:</strong> " + id + "</p>" +
+                        "<p><strong>Previous Status:</strong> " + oldStatus + "</p>" +
+                        "<p><strong>New Status:</strong> " + newStatus + "</p>" +
+                        "<p><strong>Resolution Notes:</strong> " +
+                        (notes != null && !notes.isBlank() ? notes : "No resolution notes provided.") +
+                        "</p>" +
+                        "<p>Regards,<br>VCSM Team</p>";
+
+                emailService.sendSimpleEmail(user.getEmail(), subject, emailBody);
+            }
+        } catch (Exception e) {
+            log.warning("Failed to send complaint status update email: " + e.getMessage());
+        }
+        // Log user activity
+        try {
         safelyExecute(() -> {
             User admin = userRepository.findByEmail(currentUsername()).orElse(null);
             if (admin != null) {
@@ -234,12 +271,12 @@ public class ComplaintService {
                 );
             }
         }, "log user activity and audit for status update");
+        }, "log user activity and audit for status update");
         } catch (Exception e) {
             log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
 
-        // Send notification to complaint owner
-        try {
+        safelyExecute(() -> {
             User user = getComplaintUser(id);
             if (user != null) {
                 String message = "Your complaint #" + id + " status changed from " + oldStatus + " to " + newStatus;
@@ -261,9 +298,12 @@ public class ComplaintService {
                     "INFO"
                 )
             );
+        }, "send notifications for status update");
         } catch (Exception e) {
             log.warn("Failed to send notification: {}", e.getMessage(), e);
         }
+
+        safelyExecute(() -> blockchainService.addBlock(updated, "STATUS_UPDATED"), "add blockchain entry for status update");
 
 
         safelyExecute(() -> blockchainService.addBlock(updated, "STATUS_UPDATED"), "add blockchain entry for status update");
@@ -309,6 +349,7 @@ public class ComplaintService {
             }
         }, "log user activity and audit for priority update");
 
+        safelyExecute(() -> blockchainService.addBlock(updated, "PRIORITY_UPDATED"), "add blockchain entry for priority update");
         } catch (Exception e) {
             log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
@@ -348,6 +389,7 @@ public class ComplaintService {
                 );
             }
         }, "log user activity and audit for complaint deletion");
+        }, "log user activity and audit for complaint deletion");
         } catch (Exception e) {
             log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
@@ -364,6 +406,7 @@ public class ComplaintService {
                     )
                 );
             }
+        }, "send notification for complaint deletion");
         }, "send notification for complaint deletion");
         } catch (Exception e) {
             log.warn("Failed to send notification: {}", e.getMessage(), e);

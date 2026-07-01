@@ -100,6 +100,9 @@ public class WaitlistService {
             Optional<EventWaitlist> firstWaitlist = waitlistRepository
                 .findFirstByEventAndConfirmedFalseAndNotifiedAtIsNullOrderByJoinedAtAsc(event);
             
+            log.info("✅ Notification sent to user: " + user.getEmail());
+        } catch (Exception e) {
+            log.error("❌ Failed to send notification: " + e.getMessage());
             System.out.println("✅ Notification sent to user: " + user.getEmail());
         } catch (Exception e) {
             log.error("Failed to send waitlist notification to user {}: {}", user.getEmail(), e.getMessage(), e);
@@ -159,7 +162,7 @@ public class WaitlistService {
         for (EventWaitlist entry : expired) {
             Event event = entry.getEvent();
             waitlistRepository.delete(entry);
-            System.out.println("🗑️ Removed expired waitlist entry: " + entry.getId());
+            log.info("🗑️ Removed expired waitlist entry: " + entry.getId());
             processWaitlist(event);
         }
     }

@@ -48,9 +48,10 @@ public class HindiCommandMapper {
                 keywordMap.put(entry.getKey(), words);
             });
             
-            System.out.println("✅ Hindi commands loaded: " + commandMap.size() + " commands");
+            log.info("✅ Hindi commands loaded: " + commandMap.size() + " commands");
             
         } catch (Exception e) {
+            log.error("❌ Failed to load Hindi commands: " + e.getMessage());
             log.error("Failed to load Hindi commands: {}", e.getMessage(), e);
         }
     }

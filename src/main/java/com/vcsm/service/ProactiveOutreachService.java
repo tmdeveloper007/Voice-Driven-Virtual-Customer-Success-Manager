@@ -100,6 +100,7 @@ public class ProactiveOutreachService {
             emailService.sendSimpleEmail(user.getEmail(), subject, message);
             return true;
         } catch (Exception e) {
+            log.error("Failed to send email: " + e.getMessage());
             log.error("Failed to send email to {}: {}", user.getEmail(), e.getMessage(), e);
             return false;
         }
@@ -107,7 +108,7 @@ public class ProactiveOutreachService {
 
     private boolean sendSms(User user, String message) {
         // SMS implementation placeholder
-        System.out.println("📱 SMS to " + user.getPhone() + ": " + message);
+        log.info("📱 SMS to " + user.getPhone() + ": " + message);
         return true;
     }
 

@@ -41,9 +41,10 @@ public class CommandTemplateService {
                 templates.add(entry);
             }
 
-            System.out.println("✅ Command templates loaded: " + templates.size());
+            log.info("✅ Command templates loaded: " + templates.size());
 
         } catch (Exception e) {
+            log.error("❌ Failed to load command templates: " + e.getMessage());
             log.error("Failed to load command templates: {}", e.getMessage(), e);
         }
     }
