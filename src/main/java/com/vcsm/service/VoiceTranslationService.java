@@ -56,35 +56,35 @@ public class VoiceTranslationService {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(conn.getInputStream())
-            );
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-            reader.close();
-            
-            // Parse response
-            Map<String, Object> json = objectMapper.readValue(
-                response.toString(), 
-                Map.class
-            );
-            
-            Map<String, Object> data = (Map<String, Object>) json.get("data");
-            if (data != null) {
-                Object translations = data.get("translations");
-                if (translations instanceof java.util.List) {
-                    java.util.List<Map<String, Object>> list = 
-                        (java.util.List<Map<String, Object>>) translations;
-                    if (!list.isEmpty()) {
-                        return (String) list.get(0).get("translatedText");
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                
+                // Parse response
+                Map<String, Object> json = objectMapper.readValue(
+                    response.toString(),
+                    new TypeReference<Map<String, Object>>() {}
+                );
+                
+                Map<String, Object> data = (Map<String, Object>) json.get("data");
+                if (data != null) {
+                    Object translations = data.get("translations");
+                    if (translations instanceof java.util.List) {
+                        java.util.List<Map<String, Object>> list =
+                            (java.util.List<Map<String, Object>>) translations;
+                        if (!list.isEmpty()) {
+                            return (String) list.get(0).get("translatedText");
+                        }
                     }
                 }
+                return text;
+            } finally {
+                conn.disconnect();
             }
-            
-            return text;
             
         } catch (Exception e) {
             // Fallback to mock translation
@@ -201,3 +201,4 @@ public class VoiceTranslationService {
         return languageDetector.getSupportedLanguages();
     }
 }
+
