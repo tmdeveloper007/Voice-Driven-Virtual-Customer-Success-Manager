@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/live")
-@CrossOrigin(origins = "*")
 public class LiveDashboardController {
 
     @Autowired
@@ -37,7 +36,7 @@ public class LiveDashboardController {
         }
 
         // Schedule periodic updates
-        scheduler.scheduleAtFixedRate(() -> {
+        var future = scheduler.scheduleAtFixedRate(() -> {
             try {
                 Map<String, Object> update = liveDashboardService.getRealtimeUpdate();
                 emitter.send(SseEmitter.event()
@@ -48,8 +47,10 @@ public class LiveDashboardController {
             }
         }, 5, 5, TimeUnit.SECONDS);
 
-        // Handle timeout
+        // Handle completion and timeout - cancel the scheduled task
+        emitter.onCompletion(() -> future.cancel(false));
         emitter.onTimeout(() -> {
+            future.cancel(false);
             emitter.complete();
         });
 

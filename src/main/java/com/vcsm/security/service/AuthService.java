@@ -8,6 +8,7 @@ import com.vcsm.security.model.UserRole;
 import com.vcsm.security.repo.AppUserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -17,11 +18,13 @@ public class AuthService {
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final com.vcsm.repository.UserRepository profileUserRepository;
 
     public AuthService(AppUserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.profileUserRepository = profileUserRepository;
     }
 
     public AuthResponse signupResident(AuthRequest req) {

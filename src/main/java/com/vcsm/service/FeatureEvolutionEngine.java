@@ -1,5 +1,7 @@
 package com.vcsm.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,8 @@ import java.util.*;
 
 @Service
 public class FeatureEvolutionEngine {
+
+    private static final Logger log = LoggerFactory.getLogger(FeatureEvolutionEngine.class);
 
     @Autowired
     private FeatureAnalyzer featureAnalyzer;
@@ -22,7 +26,7 @@ public class FeatureEvolutionEngine {
      */
     @Scheduled(cron = "0 0 0 * * MON") // Weekly
     public void runEvolutionCycle() {
-        System.out.println("🧬 Starting feature evolution cycle...");
+        log.info("🧬 Starting feature evolution cycle...");
 
         // 1. Analyze features
         FeatureAnalyzer.FeatureAnalysis analysis = featureAnalyzer.analyzeFeatures();
@@ -47,20 +51,20 @@ public class FeatureEvolutionEngine {
             autoAction(rec);
         }
 
-        System.out.println("✅ Evolution cycle completed");
+        log.info("✅ Evolution cycle completed");
     }
 
     private void autoAction(String recommendation) {
         if (recommendation.contains("low usage")) {
             String feature = extractFeatureName(recommendation);
             if (feature != null) {
-                System.out.println("📉 Feature '" + feature + "' will be deprioritized");
+                log.info("📉 Feature '" + feature + "' will be deprioritized");
                 // Disable feature in UI
             }
         } else if (recommendation.contains("high success")) {
             String feature = extractFeatureName(recommendation);
             if (feature != null) {
-                System.out.println("📈 Feature '" + feature + "' will be promoted");
+                log.info("📈 Feature '" + feature + "' will be promoted");
                 // Promote feature in UI
             }
         }

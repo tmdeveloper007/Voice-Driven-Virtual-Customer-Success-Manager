@@ -3,6 +3,8 @@ package com.vcsm.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class CommandTemplateService {
+
+    private static final Logger log = LoggerFactory.getLogger(CommandTemplateService.class);
 
     private List<Map<String, Object>> templates = new ArrayList<>();
 
@@ -37,10 +41,10 @@ public class CommandTemplateService {
                 templates.add(entry);
             }
 
-            System.out.println("✅ Command templates loaded: " + templates.size());
+            log.info("✅ Command templates loaded: " + templates.size());
 
         } catch (Exception e) {
-            System.err.println("❌ Failed to load command templates: " + e.getMessage());
+            log.error("❌ Failed to load command templates: " + e.getMessage());
         }
     }
 
