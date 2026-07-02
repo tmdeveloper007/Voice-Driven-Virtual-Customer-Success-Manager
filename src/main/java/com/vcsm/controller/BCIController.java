@@ -14,10 +14,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/bci")
 @CrossOrigin(origins = "*")
+@lombok.RequiredArgsConstructor
 public class BCIController {
 
-    @Autowired
-    private BCIService bciService;
+    private final BCIService bciService;
 
     private boolean isOwnerOrAdmin(CustomUserDetails userDetails, String targetUserId) {
         if (userDetails == null) {
@@ -64,7 +64,7 @@ public class BCIController {
     @PostMapping("/signal")
     public ResponseEntity<?> processSignal(
             @RequestParam String sessionId,
-            @RequestBody double[] signalData,
+            @Valid @RequestBody double[] signalData,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");

@@ -9,16 +9,17 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class InteractionService {
 
-    @Autowired
-    private InteractionRepository interactionRepository;
+    private final InteractionRepository interactionRepository;
 
     // Get current user from security context
     private String getCurrentUsername() {
@@ -37,6 +38,7 @@ public class InteractionService {
     /**
      * Create a new interaction
      */
+    @Transactional
     public Interaction createInteraction(Interaction interaction) {
         String username = getCurrentUsername();
         if (username == null) throw new RuntimeException("Unauthorized");
@@ -143,22 +145,19 @@ public class InteractionService {
         try {
             if (status != null && !status.isEmpty()) {
                 Interaction.InteractionStatus statusEnum = Interaction.InteractionStatus.valueOf(status.toUpperCase());
-                if (isAdmin()) {
-                    return interactionRepository.findByStatus(statusEnum, pageable);
-                } else {
+                Interaction.InteractionStatus statusEnum = Interaction.InteractionStatus.valueOf(status.toUpperCase());
+        // Removed dead if/else branch - both paths executed same code
                     return interactionRepository.findByStatus(statusEnum, pageable);
                 }
             } else if (sentiment != null && !sentiment.isEmpty()) {
                 Interaction.SentimentType sentimentEnum = Interaction.SentimentType.valueOf(sentiment.toUpperCase());
-                if (isAdmin()) {
-                    return interactionRepository.findBySentiment(sentimentEnum, pageable);
-                } else {
+                Interaction.SentimentType sentimentEnum = Interaction.SentimentType.valueOf(sentiment.toUpperCase());
+        // Removed dead if/else branch - both paths executed same code
                     return interactionRepository.findBySentiment(sentimentEnum, pageable);
                 }
             } else if (category != null && !category.isEmpty()) {
-                if (isAdmin()) {
-                    return interactionRepository.findByCategory(category, pageable);
-                } else {
+            } else if (category != null && !category.isEmpty()) {
+        // Removed dead if/else branch - both paths executed same code
                     return interactionRepository.findByCategory(category, pageable);
                 }
             } else {
@@ -218,6 +217,7 @@ public class InteractionService {
     /**
      * Update an interaction
      */
+    @Transactional
     public Interaction updateInteraction(Long id, Interaction updatedInteraction) {
         Optional<Interaction> existing = interactionRepository.findById(id);
         if (existing.isEmpty()) {
@@ -259,6 +259,7 @@ public class InteractionService {
     /**
      * Delete an interaction
      */
+    @Transactional
     public void deleteInteraction(Long id) {
         Optional<Interaction> interaction = interactionRepository.findById(id);
         if (interaction.isEmpty()) {

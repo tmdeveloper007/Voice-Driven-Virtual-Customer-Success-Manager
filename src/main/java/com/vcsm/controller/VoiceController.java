@@ -21,32 +21,30 @@ import com.vcsm.dto.ErrorResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
+import com.vcsm.dto.VoiceCommandRequest;
 
 @RestController
 @RequestMapping("/api/voice")
-@CrossOrigin(origins = "*")
+@lombok.RequiredArgsConstructor
 public class VoiceController {
 
-    @Autowired
-    private OmnidimService omnidimService;
+    private final OmnidimService omnidimService;
     
-    @Autowired
-    private SentimentAnalysisService sentimentService;
+    private final SentimentAnalysisService sentimentService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private LanguageDetectionService languageDetectionService;
+    private final LanguageDetectionService languageDetectionService;
 
-    @Autowired
-    private HindiCommandMapper hindiCommandMapper;
+    private final HindiCommandMapper hindiCommandMapper;
 
-    @Autowired
-    private com.vcsm.service.EventRegistrationService eventRegistrationService;
+    private final com.vcsm.service.EventRegistrationService eventRegistrationService;
 
     @PostMapping("/command")
-    public ResponseEntity<?> command(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> command(@Valid @RequestBody VoiceCommandRequest request) {
+        String transcript = request.getTranscript();
+    public ResponseEntity<?> command(@Valid @RequestBody Map<String, String> body) {
         String transcript = body.get("transcript");
         
         if (transcript == null || transcript.isBlank()) {
@@ -145,8 +143,12 @@ public class VoiceController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<VoiceCommand>> history() {
-        return ResponseEntity.ok(omnidimService.getRecentCommands());
+    public ResponseEntity<List<VoiceCommand>> history(
+            @RequestParam(required = false) Boolean success) {
+
+        return ResponseEntity.ok(
+                omnidimService.getRecentCommands(success)
+        );
     }
 
     @GetMapping("/flow-config")
@@ -155,7 +157,7 @@ public class VoiceController {
     }
 
     @PostMapping("/flow-config")
-    public ResponseEntity<Map<String, Object>> saveFlowConfig(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> saveFlowConfig(@Valid @RequestBody Map<String, String> body) {
         String flowJson = body.get("flowJson");
         if (flowJson == null || flowJson.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "flowJson is required", "success", false));

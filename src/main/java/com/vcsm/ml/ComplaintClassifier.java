@@ -10,8 +10,13 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class ComplaintClassifier {
+
+    private static final Logger log = LoggerFactory.getLogger(ComplaintClassifier.class);
 
     private DoccatModel model;
     private DocumentCategorizerME categorizer;
@@ -114,10 +119,10 @@ public class ComplaintClassifier {
 
             categorizer = new DocumentCategorizerME(model);
 
-            System.out.println("✅ Complaint classifier trained with " + samples.size() + " samples");
+            log.info("✅ Complaint classifier trained with " + samples.size() + " samples");
 
         } catch (IOException e) {
-            System.err.println("❌ Failed to train classification model: " + e.getMessage());
+            log.error("❌ Failed to train classification model: " + e.getMessage());
         }
     }
 

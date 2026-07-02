@@ -5,16 +5,17 @@ import com.vcsm.model.VoiceAnalytics;
 import com.vcsm.repository.VoiceAnalyticsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class VoiceAnalyticsService {
     
-    @Autowired
-    private VoiceAnalyticsRepository voiceAnalyticsRepository;
+    private final VoiceAnalyticsRepository voiceAnalyticsRepository;
     
     public void logCommand(User user, String commandText, String intent, boolean success, long responseTime) {
         VoiceAnalytics analytics = new VoiceAnalytics(user, commandText, intent, success, responseTime);

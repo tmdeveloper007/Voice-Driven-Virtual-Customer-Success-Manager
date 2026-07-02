@@ -5,16 +5,17 @@ import com.vcsm.model.User;
 import com.vcsm.repository.AuditLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class AuditLogService {
 
-    @Autowired
-    private AuditLogRepository auditLogRepository;
+    private final AuditLogRepository auditLogRepository;
 
     public void logAction(User admin, String actionType, String description) {
         AuditLog log = new AuditLog(admin, actionType, description);

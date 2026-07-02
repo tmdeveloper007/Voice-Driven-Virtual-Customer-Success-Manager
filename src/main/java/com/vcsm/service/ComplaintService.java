@@ -10,39 +10,53 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class ComplaintService {
 
-    private static final Logger log = Logger.getLogger(ComplaintService.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ComplaintService.class);
 
-    @Autowired
-    private ComplaintRepository complaintRepository;
+    private final ComplaintRepository complaintRepository;
 
-    @Autowired
-    private AuditLogService auditLogService;
+    private final AuditLogService auditLogService;
 
-    @Autowired
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
-    @Autowired
-    private PriorityClassifierService priorityClassifierService;
+    private final PriorityClassifierService priorityClassifierService;
 
-    @Autowired
-    private UserActivityService userActivityService;
+    private final UserActivityService userActivityService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private BlockchainService blockchainService;
+    private final BlockchainService blockchainService;
 
+    private final EmailService emailService;
+
+
+    private void safelyExecute(Runnable operation, String description) {
+        try {
+            operation.run();
+        } catch (Exception e) {
+            log.error("Failed: " + description, e);
+        }
+    }
+
+    private void safelyExecute(Runnable operation, String description) {
+        try {
+            operation.run();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed: " + description, e);
+        }
+    }
 
     private boolean isAdmin() {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -70,6 +84,7 @@ public class ComplaintService {
         return userRepository.findByEmail(username).orElse(null);
     }
 
+    @Transactional
     public Complaint fileComplaint(Complaint complaint) {
         String username = currentUsername();
         if (username == null) throw new RuntimeException("Unauthorized");
@@ -89,8 +104,7 @@ public class ComplaintService {
 
         log.info("📝 Filing complaint for user: " + username + " with priority: " + priority);
 
-        // Log user activity
-        try {
+        safelyExecute(() -> {
             User user = getCurrentUser();
             if (user != null) {
                 String description = "Filed complaint: " + saved.getDescription();
@@ -99,12 +113,12 @@ public class ComplaintService {
                 }
                 userActivityService.logActivity(user, "COMPLAINT", description, saved.getId());
             }
+        }, "log user activity for complaint filing");
         } catch (Exception e) {
-            log.warning("Failed to log user activity: " + e.getMessage());
+            log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
 
-        // Send notification to admin
-        try {
+        safelyExecute(() -> {
             User user = getCurrentUser();
             if (user != null) {
                 notificationService.sendGlobalNotification(
@@ -116,16 +130,16 @@ public class ComplaintService {
                     )
                 );
             }
+        }, "send notification for complaint filing");
+        }, "send notification for complaint filing");
         } catch (Exception e) {
-            log.warning("Failed to send notification: " + e.getMessage());
+            log.warn("Failed to send notification: {}", e.getMessage(), e);
         }
 
-        // Add to blockchain
-        try {
-            blockchainService.addBlock(saved, "COMPLAINT_CREATED");
-        } catch (Exception e) {
-            log.warning("Failed to add block to blockchain: " + e.getMessage());
-        }
+        safelyExecute(() -> blockchainService.addBlock(saved, "COMPLAINT_CREATED"), "add blockchain entry for complaint creation");
+
+
+        safelyExecute(() -> blockchainService.addBlock(saved, "COMPLAINT_CREATED"), "add blockchain entry for complaint creation");
 
         return saved;
     }
@@ -138,6 +152,18 @@ public class ComplaintService {
         return complaintRepository.findByResidentUsernameOrderByCreatedAtDesc(username);
     }
 
+
+    /**
+     * The newest complaints, fetched with a LIMIT query instead of loading
+     * the entire complaints table. Permission-aware like getAllComplaints:
+     * admins see all complaints, residents see their own.
+     */
+    public List<Complaint> getRecentComplaints(int limit) {
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                0, limit, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        return getPaginatedComplaints(pageable).getContent();
+    }
 
     // Pagination method
 
@@ -181,7 +207,7 @@ public class ComplaintService {
             return complaintRepository.findByStatus(status);
         }
         String username = currentUsername();
-        return getAllComplaints().stream().filter(c -> c.getStatus() == status).toList();
+        return getAllComplaints().stream().parallel().filter(c -> c.getStatus() == status).toList();
     }
 
     public List<Complaint> getComplaintsByPriority(String priority) {
@@ -191,6 +217,7 @@ public class ComplaintService {
         return complaintRepository.findByPriority(priority);
     }
 
+    @Transactional
     public Complaint updateStatus(Long id, String status, String resolvedBy, String notes) {
         if (!isAdmin()) {
             throw new AccessDeniedException("Only admins can update complaint status");
@@ -207,9 +234,31 @@ public class ComplaintService {
         if (notes != null && !notes.isBlank()) complaint.setResolutionNotes(notes);
         
         Complaint updated = complaintRepository.save(complaint);
+        try {
+            User user = getComplaintUser(id);
 
+            if (user != null && user.getEmail() != null && !user.getEmail().isBlank()) {
+                String subject = "Complaint Status Updated - #" + id;
+
+                String emailBody =
+                        "<p>Hello " + user.getName() + ",</p>" +
+                        "<p>Your complaint status has been updated.</p>" +
+                        "<p><strong>Complaint ID:</strong> " + id + "</p>" +
+                        "<p><strong>Previous Status:</strong> " + oldStatus + "</p>" +
+                        "<p><strong>New Status:</strong> " + newStatus + "</p>" +
+                        "<p><strong>Resolution Notes:</strong> " +
+                        (notes != null && !notes.isBlank() ? notes : "No resolution notes provided.") +
+                        "</p>" +
+                        "<p>Regards,<br>VCSM Team</p>";
+
+                emailService.sendSimpleEmail(user.getEmail(), subject, emailBody);
+            }
+        } catch (Exception e) {
+            log.warning("Failed to send complaint status update email: " + e.getMessage());
+        }
         // Log user activity
         try {
+        safelyExecute(() -> {
             User admin = userRepository.findByEmail(currentUsername()).orElse(null);
             if (admin != null) {
                 userActivityService.logActivity(
@@ -219,7 +268,6 @@ public class ComplaintService {
                     id
                 );
                 
-                // Audit Log
                 auditLogService.logAction(
                     admin,
                     "UPDATE_STATUS",
@@ -230,12 +278,13 @@ public class ComplaintService {
                     newStatus.toString()
                 );
             }
+        }, "log user activity and audit for status update");
+        }, "log user activity and audit for status update");
         } catch (Exception e) {
-            log.warning("Failed to log user activity: " + e.getMessage());
+            log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
 
-        // Send notification to complaint owner
-        try {
+        safelyExecute(() -> {
             User user = getComplaintUser(id);
             if (user != null) {
                 String message = "Your complaint #" + id + " status changed from " + oldStatus + " to " + newStatus;
@@ -257,20 +306,20 @@ public class ComplaintService {
                     "INFO"
                 )
             );
+        }, "send notifications for status update");
         } catch (Exception e) {
-            log.warning("Failed to send notification: " + e.getMessage());
+            log.warn("Failed to send notification: {}", e.getMessage(), e);
         }
 
-        // Add to blockchain
-        try {
-            blockchainService.addBlock(updated, "STATUS_UPDATED");
-        } catch (Exception e) {
-            log.warning("Failed to add block to blockchain: " + e.getMessage());
-        }
+        safelyExecute(() -> blockchainService.addBlock(updated, "STATUS_UPDATED"), "add blockchain entry for status update");
+
+
+        safelyExecute(() -> blockchainService.addBlock(updated, "STATUS_UPDATED"), "add blockchain entry for status update");
 
         return updated;
     }
 
+    @Transactional
     public Complaint updatePriority(Long id, String newPriority) {
         if (!isAdmin()) {
             throw new AccessDeniedException("Only admins can manually update complaint priority");
@@ -287,8 +336,7 @@ public class ComplaintService {
         
         Complaint updated = complaintRepository.save(complaint);
 
-        // Log user activity
-        try {
+        safelyExecute(() -> {
             User admin = userRepository.findByEmail(currentUsername()).orElse(null);
             if (admin != null) {
                 userActivityService.logActivity(
@@ -298,7 +346,6 @@ public class ComplaintService {
                     id
                 );
                 
-                // Audit Log
                 auditLogService.logAction(
                     admin,
                     "UPDATE_PRIORITY",
@@ -309,21 +356,19 @@ public class ComplaintService {
                     newPriority
                 );
             }
+        }, "log user activity and audit for priority update");
 
+        safelyExecute(() -> blockchainService.addBlock(updated, "PRIORITY_UPDATED"), "add blockchain entry for priority update");
         } catch (Exception e) {
-            log.warning("Failed to log user activity: " + e.getMessage());
+            log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
 
-        // Add to blockchain
-        try {
-            blockchainService.addBlock(updated, "PRIORITY_UPDATED");
-        } catch (Exception e) {
-            log.warning("Failed to add block to blockchain: " + e.getMessage());
-        }
+        safelyExecute(() -> blockchainService.addBlock(updated, "PRIORITY_UPDATED"), "add blockchain entry for priority update");
 
         return updated;
     }
 
+    @Transactional
     public void deleteComplaint(Long id) {
         if (!isAdmin()) {
             throw new AccessDeniedException("Only admins can delete complaints");
@@ -332,15 +377,10 @@ public class ComplaintService {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Complaint not found: " + id));
 
-        // Add to blockchain before deletion
-        try {
-            blockchainService.addBlock(complaint, "COMPLAINT_DELETED");
-        } catch (Exception e) {
-            log.warning("Failed to add block to blockchain: " + e.getMessage());
-        }
+        safelyExecute(() -> blockchainService.addBlock(complaint, "COMPLAINT_DELETED"), "add blockchain entry for complaint deletion");
 
-        // Log user activity
-        try {
+
+        safelyExecute(() -> {
             User admin = userRepository.findByEmail(currentUsername()).orElse(null);
             if (admin != null) {
                 userActivityService.logActivity(
@@ -350,7 +390,6 @@ public class ComplaintService {
                     id
                 );
                 
-                // Audit Log
                 auditLogService.logAction(
                     admin,
                     "DELETE_COMPLAINT",
@@ -359,12 +398,13 @@ public class ComplaintService {
                     id
                 );
             }
+        }, "log user activity and audit for complaint deletion");
+        }, "log user activity and audit for complaint deletion");
         } catch (Exception e) {
-            log.warning("Failed to log user activity: " + e.getMessage());
+            log.warn("Failed to log user activity: {}", e.getMessage(), e);
         }
 
-        // Send notification before deletion
-        try {
+        safelyExecute(() -> {
             User user = getComplaintUser(id);
             if (user != null) {
                 notificationService.sendNotification(user,
@@ -376,8 +416,10 @@ public class ComplaintService {
                     )
                 );
             }
+        }, "send notification for complaint deletion");
+        }, "send notification for complaint deletion");
         } catch (Exception e) {
-            log.warning("Failed to send notification: " + e.getMessage());
+            log.warn("Failed to send notification: {}", e.getMessage(), e);
         }
         
         complaintRepository.deleteById(id);

@@ -10,6 +10,8 @@ import com.itextpdf.text.pdf.PdfWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -17,10 +19,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class ExportService {
 
-    @Autowired
-    private ComplaintRepository complaintRepository;
+    private static final Logger log = LoggerFactory.getLogger(ExportService.class);
+
+    private final ComplaintRepository complaintRepository;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
@@ -51,7 +55,7 @@ public class ExportService {
                 writer.writeNext(row);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to export complaints to CSV", e);
         }
         return new ByteArrayInputStream(out.toByteArray());
     }
@@ -114,7 +118,7 @@ public class ExportService {
             document.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to export complaints to PDF", e);
         }
 
         return new ByteArrayInputStream(out.toByteArray());

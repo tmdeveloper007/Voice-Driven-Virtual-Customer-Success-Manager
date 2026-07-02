@@ -4,10 +4,14 @@ import com.vcsm.model.User;
 import com.vcsm.model.VoiceProfile;
 import com.vcsm.repository.VoiceProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,17 +22,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Profile("dev")
 @Service
+@lombok.RequiredArgsConstructor
 public class VoiceCloningService {
 
-    @Autowired
-    private VoiceProfileRepository voiceProfileRepository;
+    private static final Logger log = LoggerFactory.getLogger(VoiceCloningService.class);
 
-    @Autowired
-    private com.vcsm.repository.SentimentAnalysisRepository sentimentAnalysisRepository;
+    private final VoiceProfileRepository voiceProfileRepository;
 
-    @Autowired
-    private VoiceToneAdapterService voiceToneAdapterService;
+    private final com.vcsm.repository.SentimentAnalysisRepository sentimentAnalysisRepository;
+
+    private final VoiceToneAdapterService voiceToneAdapterService;
 
     @Value("${voice.cloning.upload.dir:uploads/voices}")
     private String uploadDir;
@@ -146,7 +151,7 @@ public class VoiceCloningService {
         try {
             Files.deleteIfExists(Paths.get(profile.getVoiceSamplePath()));
         } catch (IOException e) {
-            // Log error but continue
+            log.error("Failed to delete voice file: {}", e.getMessage(), e);
         }
 
         voiceProfileRepository.delete(profile);

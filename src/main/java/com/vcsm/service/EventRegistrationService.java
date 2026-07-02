@@ -7,28 +7,27 @@ import com.vcsm.repository.EventRepository;
 import com.vcsm.repository.EventRegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class EventRegistrationService {
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
 
-    @Autowired
-    private EventRegistrationRepository eventRegistrationRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
 
-    @Autowired
-    private ReminderScheduler reminderScheduler;
+    private final ReminderScheduler reminderScheduler;
 
-    @Autowired
-    private com.vcsm.security.jwt.JwtService jwtService;
+    private final com.vcsm.security.jwt.JwtService jwtService;
 
     /**
      * Register a user for an event
      */
+    @Transactional
     public Event registerUserForEvent(Event event, User user) {
         // Check if event exists
         if (event == null) {
@@ -45,9 +44,15 @@ public class EventRegistrationService {
             throw new RuntimeException("User already registered for this event");
         }
 
-        // Create and save event registration
+        // Create and save event registration. The unique (user_id, event_id)
+        // constraint is the last line of defense against concurrent duplicate
+        // requests that both pass the existence check above.
         EventRegistration registration = new EventRegistration(user, event);
-        registration = eventRegistrationRepository.save(registration);
+        try {
+            registration = eventRegistrationRepository.saveAndFlush(registration);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("User already registered for this event");
+        }
 
         // Generate signed ticket token
         String token = jwtService.generateTicketToken(registration.getId(), user.getId(), event.getId());
@@ -67,6 +72,7 @@ public class EventRegistrationService {
     /**
      * Cancel registration for an event
      */
+    @Transactional
     public Event cancelRegistration(Event event, User user) {
         if (event == null) {
             throw new RuntimeException("Event not found");

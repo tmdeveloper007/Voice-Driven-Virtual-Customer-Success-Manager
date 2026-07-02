@@ -11,24 +11,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class BulkComplaintService {
 
-    private static final Logger log = Logger.getLogger(BulkComplaintService.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(BulkComplaintService.class);
 
-    @Autowired
-    private ComplaintRepository complaintRepository;
+    private final ComplaintRepository complaintRepository;
 
-    @Autowired
-    private UserActivityService userActivityService;
+    private final UserActivityService userActivityService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
 
     private boolean isAdmin() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -94,7 +92,7 @@ public class BulkComplaintService {
                 }
             } catch (Exception e) {
                 failed.add(id);
-                log.warning("Failed to resolve complaint " + id + ": " + e.getMessage());
+                log.warn("Failed to resolve complaint {}: {}", id, e.getMessage(), e);
             }
         }
 
@@ -147,7 +145,7 @@ public class BulkComplaintService {
                 }
             } catch (Exception e) {
                 failed.add(id);
-                log.warning("Failed to update complaint " + id + ": " + e.getMessage());
+                log.warn("Failed to update complaint {}: {}", id, e.getMessage(), e);
             }
         }
 

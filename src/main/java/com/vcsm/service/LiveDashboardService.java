@@ -15,20 +15,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
+@lombok.RequiredArgsConstructor
 public class LiveDashboardService {
 
-    @Autowired
-    private ComplaintRepository complaintRepository;
+    private final ComplaintRepository complaintRepository;
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
 
     // Active user tracking
     private final Map<String, Long> activeUsers = new ConcurrentHashMap<>();
     private final AtomicInteger totalActiveUsers = new AtomicInteger(0);
 
     // Live stats cache
-    private Map<String, Object> cachedStats = new HashMap<>();
+    private Map<String, Object> cachedStats = new ConcurrentHashMap<>();
     private long lastUpdateTime = 0;
 
     public Map<String, Object> getLiveStats() {

@@ -7,47 +7,41 @@ import com.vcsm.model.Event;
 import com.vcsm.repository.VoiceCommandRepository;
 import com.vcsm.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
-import com.vcsm.model.VenueReservation;
 
+@Profile("dev")
 @Service
+@lombok.RequiredArgsConstructor
 public class OmnidimService {
 
-    private static final Logger log = Logger.getLogger(OmnidimService.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OmnidimService.class);
 
     @Value("${omnidim.api.key:YOUR_OMNIDIM_API_KEY}")
     private String apiKey;
 
-    @Autowired
-    private VoiceCommandRepository voiceCommandRepository;
+    private final VoiceCommandRepository voiceCommandRepository;
 
-    @Autowired
-    private ComplaintService complaintService;
+    private final ComplaintService complaintService;
 
-    @Autowired
-    private EventService eventService;
+    private final EventService eventService;
 
-    @Autowired
-    private EventRegistrationService eventRegistrationService;
+    private final EventRegistrationService eventRegistrationService;
 
-    @Autowired
-    private VoiceModelRegistryService voiceModelRegistryService;
+    private final VoiceModelRegistryService voiceModelRegistryService;
 
-    @Autowired
-    private VoiceAnalyticsService voiceAnalyticsService;
+    private final VoiceAnalyticsService voiceAnalyticsService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private SchedulingOptimizer schedulingOptimizer;
+    private final SchedulingOptimizer schedulingOptimizer;
 
     private final Map<Long, PendingBookingState> pendingBookings = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -103,16 +97,14 @@ public class OmnidimService {
             if (email != null) {
                 user = userRepository.findByEmail(email).orElse(null);
             }
-            if (user == null) {
-                user = userRepository.findById(1L).orElse(null); // Fallback to 1L
-            }
+
 
             if (user != null) {
                 boolean success = !intent.equals("UNKNOWN");
                 voiceAnalyticsService.logCommand(user, transcript, intent, success, responseTime);
             }
         } catch (Exception e) {
-            log.warning("Failed to log voice analytics: " + e.getMessage());
+            log.warn("Failed to log voice analytics: {}", e.getMessage(), e);
         }
 
         Map<String, Object> result = new java.util.HashMap<>();
@@ -129,19 +121,19 @@ public class OmnidimService {
     private String detectIntent(String t) {
         if (t.contains("book") || t.contains("reserve") || t.contains("schedule")) {
             if (t.contains("hall") || t.contains("clubhouse") || t.contains("gym") || t.contains("venue")) {
-                return "BOOK_VENUE";
+                return org.springframework.http.ResponseEntity.ok("BOOK_VENUE");
             }
         }
-        if (t.contains("status") || t.contains("check") || t.contains("my complaint")) return "CHECK_COMPLAINT";
+        if (t.contains("status") || t.contains("check") || t.contains("my complaint")) return org.springframework.http.ResponseEntity.ok("CHECK_COMPLAINT");
         if (t.contains("complaint") || t.contains("noise") || t.contains("maintenance")
-                || t.contains("broken") || t.contains("security") || t.contains("parking")) return "FILE_COMPLAINT";
+                || t.contains("broken") || t.contains("security") || t.contains("parking")) return org.springframework.http.ResponseEntity.ok("FILE_COMPLAINT");
         if (t.contains("cancel") || t.contains("opt out") || t.contains("withdraw")
-                || t.contains("un-register") || t.contains("unregister")) return "CANCEL_REGISTRATION";
+                || t.contains("un-register") || t.contains("unregister")) return org.springframework.http.ResponseEntity.ok("CANCEL_REGISTRATION");
         if (t.contains("event") || t.contains("sports") || t.contains("cultural")
-                || t.contains("activity")) return "EVENT_QUERY";
+                || t.contains("activity")) return org.springframework.http.ResponseEntity.ok("EVENT_QUERY");
         if (t.contains("analytics") || t.contains("how many") || t.contains("total")
-                || t.contains("summary")) return "ANALYTICS";
-        return "UNKNOWN";
+                || t.contains("summary")) return org.springframework.http.ResponseEntity.ok("ANALYTICS");
+        return org.springframework.http.ResponseEntity.ok("UNKNOWN");
     }
 
     private String handleCancelRegistration(String t) {
@@ -151,17 +143,15 @@ public class OmnidimService {
         if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
-        if (user == null) {
-            user = userRepository.findById(1L).orElse(null); // Fallback to 1L
-        }
+
 
         if (user == null) {
-            return "User not found. Please log in first.";
+            return org.springframework.http.ResponseEntity.ok("User not found. Please log in first.");
         }
 
         List<Event> userEvents = eventRegistrationService.getUserEvents(user);
         if (userEvents.isEmpty()) {
-            return "You are not registered for any upcoming events.";
+            return org.springframework.http.ResponseEntity.ok("You are not registered for any upcoming events.");
         }
 
         Event matchedEvent = null;
@@ -186,7 +176,7 @@ public class OmnidimService {
             if (userEvents.size() == 1) {
                 matchedEvent = userEvents.get(0);
             } else {
-                return "Which event registration would you like to cancel? Please specify the event name.";
+                return org.springframework.http.ResponseEntity.ok("Which event registration would you like to cancel? Please specify the event name.");
             }
         }
 
@@ -211,9 +201,7 @@ public class OmnidimService {
         if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
-        if (user == null) {
-            user = userRepository.findById(1L).orElse(null); // Fallback to 1L
-        }
+
 
         Complaint complaint = new Complaint();
         if (user != null) {
@@ -233,19 +221,26 @@ public class OmnidimService {
 
     private String handleStatusCheck() {
         Map<String, Long> s = complaintService.getComplaintStats();
-        return "Currently " + s.get("open") + " open complaints and " + s.get("inProgress") + " in progress.";
+        return org.springframework.http.ResponseEntity.ok("Currently " + s.get("open") + " open complaints and " + s.get("inProgress") + " in progress.");
     }
 
     private String handleEventQuery() {
         var upcoming = eventService.getUpcomingEvents();
-        if (upcoming.isEmpty()) return "No upcoming events right now. Check back soon!";
+        if (upcoming.isEmpty()) return org.springframework.http.ResponseEntity.ok("No upcoming events right now. Check back soon!");
         StringBuilder sb = new StringBuilder("Upcoming: ");
         upcoming.stream().limit(3).forEach(e -> sb.append(e.getName()).append(", "));
         return sb.toString().replaceAll(", $", ". Visit Events section for details!");
     }
 
     private String handleAnalytics() {
-        Map<String, Long> s = complaintService.getComplaintStats();
+        Map<String, Long> s;
+        try {
+            s = complaintService.getComplaintStats();
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            // Community-wide statistics are admin-only; do not leak them
+            // through the public voice endpoint.
+            return "Community analytics are only available to administrators.";
+        }
         return "Summary: " + s.get("total") + " complaints (" + s.get("open") + " open, "
                 + s.get("resolved") + " resolved). " + eventService.getActiveEvents().size() + " active events.";
     }
@@ -254,6 +249,13 @@ public class OmnidimService {
         return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
     }
 
+    public List<VoiceCommand> getRecentCommands(Boolean success) {
+
+        if (success == null) {
+            return voiceCommandRepository.findTop10ByOrderByCreatedAtDesc();
+        }
+
+        return voiceCommandRepository.findByProcessedOrderByCreatedAtDesc(success);
     private String handleEventBooking(String t) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth != null ? auth.getName() : null;
@@ -261,11 +263,9 @@ public class OmnidimService {
         if (email != null) {
             user = userRepository.findByEmail(email).orElse(null);
         }
+
         if (user == null) {
-            user = userRepository.findById(1L).orElse(null); // Fallback to 1L
-        }
-        if (user == null) {
-            return "Unable to book event: user session not found.";
+            return org.springframework.http.ResponseEntity.ok("Unable to book event: user session not found.");
         }
 
         List<Event> events = eventService.getActiveEvents();
@@ -296,12 +296,12 @@ public class OmnidimService {
         }
 
         if (matchedEvent == null) {
-            return "Sorry, I couldn't find an event matching that description. Please try specifying the exact event name.";
+            return org.springframework.http.ResponseEntity.ok("Sorry, I couldn't find an event matching that description. Please try specifying the exact event name.");
         }
 
         try {
             Event updatedEvent = eventService.registerForEvent(matchedEvent.getId(), user.getId());
-            return "Success! You have been registered for " + updatedEvent.getName() + ". A confirmation email with your ticket check-in QR code has been sent to " + user.getEmail() + ".";
+            return org.springframework.http.ResponseEntity.ok("Success! You have been registered for " + updatedEvent.getName() + ". A confirmation email with your ticket check-in QR code has been sent to " + user.getEmail() + ".");
         } catch (Exception e) {
             return "Could not complete booking: " + e.getMessage();
         }

@@ -5,21 +5,37 @@ import java.time.LocalDateTime;
 
 public class InteractionDTO {
 
+    @JsonProperty("id")
     private Long id;
+    @JsonProperty("customerName")
     private String customerName;
+    @JsonProperty("interactionType")
     private String interactionType;
+    @JsonProperty("summary")
     private String summary;
+    @JsonProperty("details")
     private String details;
+    @JsonProperty("status")
     private String status;
+    @JsonProperty("sentiment")
     private String sentiment;
+    @JsonProperty("duration")
     private String duration;
+    @JsonProperty("createdAt")
     private LocalDateTime createdAt;
+    @JsonProperty("updatedAt")
     private LocalDateTime updatedAt;
+    @JsonProperty("customerEmail")
     private String customerEmail;
+    @JsonProperty("customerPhone")
     private String customerPhone;
+    @JsonProperty("agentName")
     private String agentName;
+    @JsonProperty("category")
     private String category;
+    @JsonProperty("outcome")
     private String outcome;
+    @JsonProperty("followUpRequired")
     private boolean followUpRequired;
 
     // Constructors
@@ -82,13 +98,13 @@ public class InteractionDTO {
 
     // Helper method to format dates for display
     public String getFormattedCreatedAt() {
-        if (createdAt == null) return "";
+        if (createdAt == null) return org.springframework.http.ResponseEntity.ok("");
         return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
     }
 
     // Helper method for sentiment badge color
     public String getSentimentBadgeClass() {
-        if (sentiment == null) return "badge-secondary";
+        if (sentiment == null) return org.springframework.http.ResponseEntity.ok("badge-secondary");
         return switch (sentiment) {
             case "POSITIVE" -> "badge-success";
             case "NEGATIVE" -> "badge-danger";
@@ -98,7 +114,7 @@ public class InteractionDTO {
 
     // Helper method for status badge color
     public String getStatusBadgeClass() {
-        if (status == null) return "badge-secondary";
+        if (status == null) return org.springframework.http.ResponseEntity.ok("badge-secondary");
         return switch (status) {
             case "COMPLETED" -> "badge-success";
             case "IN_PROGRESS" -> "badge-info";
@@ -108,3 +124,4 @@ public class InteractionDTO {
         };
     }
 }
+
