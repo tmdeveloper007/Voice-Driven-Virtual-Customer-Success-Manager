@@ -3,6 +3,8 @@ package com.vcsm.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 @Entity
 @Table(name = "event_registrations", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "event_id"})

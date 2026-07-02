@@ -3,6 +3,9 @@ package com.vcsm.dto;
 import com.vcsm.model.Interaction;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class InteractionDTO {
 
     private Long id;

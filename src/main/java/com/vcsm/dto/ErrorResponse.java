@@ -2,6 +2,9 @@ package com.vcsm.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class ErrorResponse {
 
     private int status;

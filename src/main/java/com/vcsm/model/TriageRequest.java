@@ -2,6 +2,8 @@ package com.vcsm.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class TriageRequest {
     private Long complaintId;
     private String description;

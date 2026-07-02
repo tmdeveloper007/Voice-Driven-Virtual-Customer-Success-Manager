@@ -3,6 +3,8 @@ package com.vcsm.model;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class AgentRequest {
     private String userQuery;
     private Long userId;
