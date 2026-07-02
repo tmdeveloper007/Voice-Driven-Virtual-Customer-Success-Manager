@@ -183,7 +183,7 @@ public class QuantumFederatedService {
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalRounds", roundNumber);
-        stats.put("activeRounds", rounds.values().stream().filter(r -> "ACTIVE".equals(r.getStatus())).count());
+        stats.put("activeRounds", rounds.values().stream().parallel().filter(r -> "ACTIVE".equals(r.getStatus())).count());
         stats.put("totalClients", clientStatus.size());
         stats.put("numQubits", NUM_QUBITS);
         stats.put("numLayers", NUM_LAYERS);

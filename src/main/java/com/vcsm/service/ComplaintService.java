@@ -202,7 +202,7 @@ public class ComplaintService {
             return complaintRepository.findByStatus(status);
         }
         String username = currentUsername();
-        return getAllComplaints().stream().filter(c -> c.getStatus() == status).toList();
+        return getAllComplaints().stream().parallel().filter(c -> c.getStatus() == status).toList();
     }
 
     public List<Complaint> getComplaintsByPriority(String priority) {

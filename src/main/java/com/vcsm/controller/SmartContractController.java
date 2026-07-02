@@ -53,9 +53,9 @@ public class SmartContractController {
     public ResponseEntity<Map<String, Object>> getStats() {
         Map<String, Object> stats = new HashMap<>();
         List<SmartContract> all = smartContractService.getAllContracts();
-        long pending = all.stream().filter(c -> "PENDING".equals(c.getExecutionStatus())).count();
-        long executed = all.stream().filter(c -> "EXECUTED".equals(c.getExecutionStatus())).count();
-        long failed = all.stream().filter(c -> "FAILED".equals(c.getExecutionStatus())).count();
+        long pending = all.stream().parallel().filter(c -> "PENDING".equals(c.getExecutionStatus())).count();
+        long executed = all.stream().parallel().filter(c -> "EXECUTED".equals(c.getExecutionStatus())).count();
+        long failed = all.stream().parallel().filter(c -> "FAILED".equals(c.getExecutionStatus())).count();
 
         stats.put("total", all.size());
         stats.put("pending", pending);

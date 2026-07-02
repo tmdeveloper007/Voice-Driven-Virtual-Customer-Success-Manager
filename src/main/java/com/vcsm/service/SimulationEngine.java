@@ -138,7 +138,7 @@ public class SimulationEngine {
             .count();
 
         long totalEvents = events.size();
-        long activeEvents = events.stream().filter(Event::isActive).count();
+        long activeEvents = events.stream().parallel().filter(Event::isActive).count();
 
         result.setTotalComplaints(totalComplaints);
         result.setResolvedComplaints(resolvedComplaints);

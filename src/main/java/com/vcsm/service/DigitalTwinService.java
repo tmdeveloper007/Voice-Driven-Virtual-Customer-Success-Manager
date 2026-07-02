@@ -129,8 +129,8 @@ public class DigitalTwinService {
         List<DigitalTwin> twins = digitalTwinRepository.findAll();
 
         stats.put("totalTwins", twins.size());
-        stats.put("activeTwins", twins.stream().filter(t -> "ACTIVE".equals(t.getStatus())).count());
-        stats.put("syncedTwins", twins.stream().filter(t -> t.getLastSync() != null).count());
+        stats.put("activeTwins", twins.stream().parallel().filter(t -> "ACTIVE".equals(t.getStatus())).count());
+        stats.put("syncedTwins", twins.stream().parallel().filter(t -> t.getLastSync() != null).count());
         stats.put("status", "Digital Twin System active");
 
         return stats;

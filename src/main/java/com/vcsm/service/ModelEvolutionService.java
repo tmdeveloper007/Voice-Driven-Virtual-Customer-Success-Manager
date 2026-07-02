@@ -110,7 +110,7 @@ public class ModelEvolutionService {
     public Map<String, Object> getEvolutionStats() {
         Map<String, Object> stats = new HashMap<>();
         List<ModelVersion> allVersions = modelVersionRepository.findAll();
-        long deployedCount = allVersions.stream().filter(ModelVersion::isDeployed).count();
+        long deployedCount = allVersions.stream().parallel().filter(ModelVersion::isDeployed).count();
 
         stats.put("totalVersions", allVersions.size());
         stats.put("deployedModels", deployedCount);
