@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/security")
-@CrossOrigin(origins = "*")
 public class SecurityController {
 
     @Autowired

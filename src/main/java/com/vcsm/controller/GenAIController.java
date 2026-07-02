@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/genai")
-@CrossOrigin(origins = "*")
 public class GenAIController {
 
     @Autowired

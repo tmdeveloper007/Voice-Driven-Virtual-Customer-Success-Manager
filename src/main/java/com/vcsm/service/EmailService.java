@@ -6,11 +6,15 @@ import com.vcsm.model.Event;
 import com.vcsm.model.User;
 import com.vcsm.repository.EmailLogRepository;
 import com.vcsm.repository.EmailQueueRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.mail.internet.MimeMessage;
 
 import java.time.LocalDateTime;
@@ -18,6 +22,8 @@ import java.time.format.DateTimeFormatter;
 
 @Service
 public class EmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     @Autowired
     private JavaMailSender mailSender;
@@ -44,7 +50,7 @@ public class EmailService {
         EmailQueue queueItem = new EmailQueue(user, event, user.getEmail(), subject, message);
         emailQueueRepository.save(queueItem);
 
-        System.out.println("📨 Queued email reminder to: " + user.getEmail() + " for event: " + event.getName());
+        log.info("📨 Queued email reminder to: " + user.getEmail() + " for event: " + event.getName());
     }
 
     public void sendEventSlotAvailable(Event event, User user) {
@@ -54,7 +60,7 @@ public class EmailService {
         EmailQueue queueItem = new EmailQueue(user, event, user.getEmail(), subject, message);
         emailQueueRepository.save(queueItem);
 
-        System.out.println("📨 Queued slot available email to: " + user.getEmail());
+        log.info("📨 Queued slot available email to: " + user.getEmail());
     }
 
     // ✅ NEW — used by ProactiveOutreachService.sendSimpleEmail(to, subject, body)
@@ -67,9 +73,10 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(message, true);
             mailSender.send(mimeMessage);
-            System.out.println("✅ Sent simple email to: " + toEmail);
+            log.info("✅ Sent simple email to: " + toEmail);
         } catch (Exception e) {
-            System.err.println("❌ Failed to send simple email to " + toEmail + ": " + e.getMessage());
+            log.error("❌ Failed to send simple email to " + toEmail + ": " + e.getMessage());
+            log.error("Failed to send simple email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -107,7 +114,7 @@ public class EmailService {
             email.setStatus("SENT");
             emailQueueRepository.save(email);
 
-            System.out.println("✅ Sent queued email to: " + email.getRecipientEmail());
+            log.info("✅ Sent queued email to: " + email.getRecipientEmail());
 
         } catch (Exception e) {
             EmailLog log = new EmailLog(email.getUser(), email.getEvent(), email.getRecipientEmail(), email.getSubject(), email.getMessage());
@@ -121,11 +128,13 @@ public class EmailService {
 
             if (attempts >= 5) {
                 email.setStatus("FAILED");
-                System.err.println("❌ Permanently failed to send queued email to " + email.getRecipientEmail() + ": " + e.getMessage());
+                log.error("❌ Permanently failed to send queued email to " + email.getRecipientEmail() + ": " + e.getMessage());
+                log.error("Permanently failed to send queued email to {}: {}", email.getRecipientEmail(), e.getMessage(), e);
             } else {
                 long backoffMinutes = (long) Math.pow(2, attempts);
                 email.setNextAttemptAt(LocalDateTime.now().plusMinutes(backoffMinutes));
-                System.out.println("⏳ Failed email to " + email.getRecipientEmail() + ". Scheduling retry in " + backoffMinutes + " mins. Attempt: " + attempts);
+                log.info("⏳ Failed email to " + email.getRecipientEmail() + ". Scheduling retry in " + backoffMinutes + " mins. Attempt: " + attempts);
+                log.warn("Failed email to {}. Scheduling retry in {} mins. Attempt: {}", email.getRecipientEmail(), backoffMinutes, attempts, e);
             }
             emailQueueRepository.save(email);
         }

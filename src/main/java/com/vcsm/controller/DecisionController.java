@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/decision")
-@CrossOrigin(origins = "*")
 public class DecisionController {
 
     @Autowired

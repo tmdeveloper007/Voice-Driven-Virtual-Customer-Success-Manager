@@ -40,4 +40,3 @@ public class IntentClassificationController {
         return ResponseEntity.ok(response);
     }
 }
-

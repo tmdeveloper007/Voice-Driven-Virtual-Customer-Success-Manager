@@ -21,10 +21,11 @@ import com.vcsm.dto.ErrorResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
+import com.vcsm.dto.VoiceCommandRequest;
 
 @RestController
 @RequestMapping("/api/voice")
-@CrossOrigin(origins = "*")
 public class VoiceController {
 
     @Autowired
@@ -46,6 +47,8 @@ public class VoiceController {
     private com.vcsm.service.EventRegistrationService eventRegistrationService;
 
     @PostMapping("/command")
+    public ResponseEntity<Map<String, Object>> command(@Valid @RequestBody VoiceCommandRequest request) {
+        String transcript = request.getTranscript();
     public ResponseEntity<?> command(@Valid @RequestBody Map<String, String> body) {
         String transcript = body.get("transcript");
         
@@ -145,8 +148,12 @@ public class VoiceController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<VoiceCommand>> history() {
-        return ResponseEntity.ok(omnidimService.getRecentCommands());
+    public ResponseEntity<List<VoiceCommand>> history(
+            @RequestParam(required = false) Boolean success) {
+
+        return ResponseEntity.ok(
+                omnidimService.getRecentCommands(success)
+        );
     }
 
     @GetMapping("/flow-config")
@@ -164,4 +171,3 @@ public class VoiceController {
         return ResponseEntity.ok(Map.of("message", "IVR Flow Configuration updated successfully", "success", true));
     }
 }
-

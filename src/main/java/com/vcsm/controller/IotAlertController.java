@@ -143,4 +143,3 @@ public class IotAlertController {
         public void setResidentPhoneNumber(String residentPhoneNumber) { this.residentPhoneNumber = residentPhoneNumber; }
     }
 }
-

@@ -20,7 +20,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/voice/biometrics")
-@CrossOrigin(origins = "*")
 public class VoiceBiometricsController {
 
     @Autowired
@@ -31,6 +30,9 @@ public class VoiceBiometricsController {
 
     @PostMapping("/enroll")
     public ResponseEntity<VoiceVerificationResponse> enrollVoice(
+            @PathVariable Long userId,
+            @Valid @RequestBody VoiceVerificationRequest request) {
+        
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody VoiceVerificationRequest request) {
 
@@ -63,6 +65,8 @@ public class VoiceBiometricsController {
 
     @PostMapping("/verify")
     public ResponseEntity<VoiceVerificationResponse> verifyVoice(
+            @Valid @RequestBody VoiceVerificationRequest request) {
+        
             @Valid @RequestBody VoiceVerificationRequest request) {
 
         if (request.getUserId() == null) {
