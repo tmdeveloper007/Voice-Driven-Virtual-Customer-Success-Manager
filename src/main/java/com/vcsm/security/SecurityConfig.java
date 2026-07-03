@@ -68,10 +68,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
-                        hmacAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                )
-                .addFilterBefore(
                         jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
