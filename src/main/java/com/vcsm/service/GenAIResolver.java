@@ -10,6 +10,7 @@ import java.util.*;
 
 @Service
 @lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class GenAIResolver {
 
     private final SolutionMatcher solutionMatcher;
@@ -83,7 +84,7 @@ public class GenAIResolver {
                     Complaint saved = complaintService.fileComplaint(complaint);
                     ticketId = saved.getId();
                 } catch (Exception e) {
-                    System.err.println("Failed to auto-file complaint: " + e.getMessage());
+                    log.error("Failed to auto-file complaint: " + e.getMessage());
                 }
             }
         }

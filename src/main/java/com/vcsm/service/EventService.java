@@ -18,6 +18,7 @@ import java.util.Optional;
 
 @Service
 @lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class EventService {
 
     private final EventRepository eventRepository;
@@ -125,7 +126,7 @@ public class EventService {
         try {
             reminderScheduler.sendRegistrationConfirmation(savedEvent, user);
         } catch (Exception e) {
-            System.err.println("❌ Failed to send registration email: " + e.getMessage());
+            log.error("❌ Failed to send registration email: " + e.getMessage());
         }
 
         return savedEvent;

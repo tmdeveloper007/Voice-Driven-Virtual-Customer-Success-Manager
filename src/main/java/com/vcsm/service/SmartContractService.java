@@ -10,6 +10,7 @@ import java.util.*;
 
 @Service
 @lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class SmartContractService {
 
     private final SmartContractRepository smartContractRepository;
@@ -70,13 +71,13 @@ public class SmartContractService {
     private void executeContractLogic(SmartContract contract) {
         switch (contract.getConditionType()) {
             case "RESOLUTION":
-                System.out.println("✅ Auto-resolving complaint: " + contract.getComplaintId());
+                log.info("✅ Auto-resolving complaint: " + contract.getComplaintId());
                 break;
             case "PAYMENT":
-                System.out.println("💰 Processing payment of " + contract.getAmount() + " for contract: " + contract.getId());
+                log.info("💰 Processing payment of " + contract.getAmount() + " for contract: " + contract.getId());
                 break;
             case "COMPLETION":
-                System.out.println("🎉 Event completed: " + contract.getEventId());
+                log.info("🎉 Event completed: " + contract.getEventId());
                 break;
         }
     }

@@ -8,6 +8,7 @@ import java.util.*;
 
 @Service
 @lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class FederatedLearningService {
 
     private final LocalModelTrainer localModelTrainer;
@@ -98,7 +99,7 @@ public class FederatedLearningService {
      */
     @Scheduled(fixedDelay = 600000) // 10 minutes
     public void autoStartRound() {
-        System.out.println("🧬 Auto-starting federated learning round...");
+        log.info("🧬 Auto-starting federated learning round...");
         startRound();
     }
 

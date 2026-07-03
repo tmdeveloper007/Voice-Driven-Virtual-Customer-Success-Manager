@@ -15,6 +15,7 @@ import java.util.Optional;
 
 @Service
 @lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class SessionManagementService {
 
     private final CustomerSessionRepository sessionRepository;
@@ -97,7 +98,7 @@ public class SessionManagementService {
         }
 
         if (!sessionsToArchive.isEmpty()) {
-            System.out.println("Archived " + sessionsToArchive.size() + " sessions older than " + SESSION_ARCHIVAL_DAYS + " days");
+            log.info("Archived " + sessionsToArchive.size() + " sessions older than " + SESSION_ARCHIVAL_DAYS + " days");
         }
     }
 
