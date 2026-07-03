@@ -5,6 +5,9 @@ import com.vcsm.model.Interaction;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class InteractionDTO {
 
     @JsonProperty("id")
@@ -129,4 +132,3 @@ public class InteractionDTO {
         };
     }
 }
-
