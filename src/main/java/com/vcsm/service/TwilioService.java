@@ -56,7 +56,11 @@ public class TwilioService {
             log.info("📞 Call initiated: " + call.getSid());
             return call;
             
-        } catch (Exception e) {
+        }
+    public String getTwilioPhoneNumber() {
+        return twilioPhoneNumber;
+    }
+ catch (Exception e) {
             log.error("❌ Failed to make call: " + e.getMessage());
             log.error("Failed to make call to {}: {}", toPhoneNumber, e.getMessage(), e);
             return null;
