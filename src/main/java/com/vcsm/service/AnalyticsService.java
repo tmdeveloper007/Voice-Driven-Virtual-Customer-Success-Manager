@@ -18,11 +18,6 @@ public class AnalyticsService {
     private final SentimentAnalysisRepository sentimentRepository;
     private final VoiceCommandRepository voiceCommandRepository;
 
-    @Autowired
-    public AnalyticsService(SentimentAnalysisRepository sentimentRepository, VoiceCommandRepository voiceCommandRepository) {
-        this.sentimentRepository = sentimentRepository;
-        this.voiceCommandRepository = voiceCommandRepository;
-    }
 
     public Map<String, Object> getDailySentiment(int days) {
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);
