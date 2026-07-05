@@ -38,47 +38,47 @@ public class WebController {
 
     @GetMapping("/landing")
     public String landing() {
-        return org.springframework.http.ResponseEntity.ok("landing");
+        return "landing";
     }
 
     @GetMapping("/login")
     public String login() {
-        return org.springframework.http.ResponseEntity.ok("login");
+        return "login";
     }
 
     @GetMapping("/chatbot")
     public String chatbot() {
-        return org.springframework.http.ResponseEntity.ok("chatbot-ui");
+        return "chatbot-ui";
     }
 
     @GetMapping("/voice-templates")
     public String voiceTemplates() {
-        return org.springframework.http.ResponseEntity.ok("voice-templates");
+        return "voice-templates";
     }
 
     @GetMapping("/profile")
     public String profile() {
-        return org.springframework.http.ResponseEntity.ok("profile");
+        return "profile";
     }
 
     @GetMapping("/onboarding")
     public String onboarding() {
-        return org.springframework.http.ResponseEntity.ok("onboarding");
+        return "onboarding";
     }
 
     @GetMapping("/voice-analytics")
     public String voiceAnalytics() {
-        return org.springframework.http.ResponseEntity.ok("voice-analytics");
+        return "voice-analytics";
     }
 
     @GetMapping("/audit-logs")
     public String auditLogs() {
-        return org.springframework.http.ResponseEntity.ok("audit-logs");
+        return "audit-logs";
     }
 
     @GetMapping("/ivr-builder")
     public String ivrBuilder() {
-        return org.springframework.http.ResponseEntity.ok("ivr-builder");
+        return "ivr-builder";
     }
 
     @GetMapping("/")
@@ -126,7 +126,7 @@ public class WebController {
                 userRepository.findByDissatisfactionScoreGreaterThanEqual(75.0);
         model.addAttribute("highRiskUsers", highRiskUsers);
 
-        return org.springframework.http.ResponseEntity.ok("dashboard");
+        return "dashboard";
     }
 
     @GetMapping("/complaints")
@@ -164,7 +164,7 @@ public class WebController {
         model.addAttribute("page", complaintPage);
         model.addAttribute("stats", complaintService.getComplaintStats());
 
-        return org.springframework.http.ResponseEntity.ok("complaints");
+        return "complaints";
     }
 
     @GetMapping("/events")
@@ -180,22 +180,22 @@ public class WebController {
                         ? eventService.getUpcomingEvents().size()
                         : 0);
 
-        return org.springframework.http.ResponseEntity.ok("events");
+        return "events";
     }
 
     @GetMapping("/voice-cloning")
     public String voiceCloning() {
-       return org.springframework.http.ResponseEntity.ok("voice-cloning-ui");
+       return "voice-cloning-ui";
     }
 
     @GetMapping("/live-dashboard")
     public String liveDashboard() {
-        return org.springframework.http.ResponseEntity.ok("live-dashboard");
+        return "live-dashboard";
     }
 
     @GetMapping("/translation")
     public String translation() {
-        return org.springframework.http.ResponseEntity.ok("translation-ui");
+        return "translation-ui";
     }
 
     @GetMapping("/analytics")
@@ -221,22 +221,22 @@ public class WebController {
                         ? eventService.getActiveEvents().size()
                         : 0);
 
-        return org.springframework.http.ResponseEntity.ok("analytics");
+        return "analytics";
     }
 
     @GetMapping("/blockchain-verify")
     public String blockchainVerify() {
-        return org.springframework.http.ResponseEntity.ok("blockchain-verify");
+        return "blockchain-verify";
     }
 
     @GetMapping("/offline")
     public String offline() {
-        return org.springframework.http.ResponseEntity.ok("offline");
+        return "offline";
     }
 
     @GetMapping("/twilio-demo")
     public String twilioDemo() {
-        return org.springframework.http.ResponseEntity.ok("twilio-demo");
+        return "twilio-demo";
     }
 
     @GetMapping("/interaction-history")
@@ -257,7 +257,7 @@ public class WebController {
         } catch (Exception e) {
             model.addAttribute("interactionStats", new HashMap<>());
         }
-        return org.springframework.http.ResponseEntity.ok("interaction-history");
+        return "interaction-history";
     }
 
 }
