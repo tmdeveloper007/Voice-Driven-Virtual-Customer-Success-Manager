@@ -1,6 +1,5 @@
 package com.vcsm.abtesting;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +19,8 @@ import java.util.Map;
 @RequestMapping("/api/experiments")
 public class ExperimentController {
 
-    @Autowired
-    private ExperimentService experimentService;
+    @lombok.RequiredArgsConstructor
+    private final ExperimentService experimentService;
 
     /**
      * Sticky variant assignment for a session.
