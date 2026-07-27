@@ -14,13 +14,11 @@ import java.util.concurrent.ExecutionException;
 @lombok.RequiredArgsConstructor
 public class RateLimitingService {
 
-    @Autowired
     @Qualifier("voiceApiRateLimiter")
-    private LoadingCache<String, RateLimiter> anonymousLimiters;
+    private final LoadingCache<String, RateLimiter> anonymousLimiters;
 
-    @Autowired
     @Qualifier("authenticatedVoiceApiRateLimiter")
-    private LoadingCache<String, RateLimiter> authenticatedLimiters;
+    private final LoadingCache<String, RateLimiter> authenticatedLimiters;
 
     private final VoiceRateLimitConfig config;
 
